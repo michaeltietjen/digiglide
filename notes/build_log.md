@@ -616,3 +616,14 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   1 to 5 blocks after the press while recording, and `DG.last_note` follows the keys. (The pitch words at an attack
   are where the glide starts, the previous chord: that is not a wrong chord.) The recording test never checked
   sound during recording before this. Next: a `tools/dgwatch.py` capture from the unit while it happens.
+- Test image 94, the rest: test_rev5 36 and test_every_machine 29 pass. `isr_cost_dg.py` did not run: it is
+  stale since rev 5 (it still passes `deg` to the model's Params). The self-test's figures stand in for it: 612
+  instructions a block for 6 voices, 5,345 in a trig block.
+- Unit capture of a live recording take (`tools/dgwatch.py`, image 15, track 13, HOLD on, 64 steps, about 100 BPM;
+  the first two captures were of an idle unit). First pass, 17.3 s to 26.9 s: every key fired a chord event
+  (hand-played, `ev_seq` 0), gates open on all six voices (`was_on` 63), the chord names follow the keys (G MAJ,
+  E MIN, G MAJ, B MIN, C MAJ, D MAJ, ...). Second pass: the recorded trigs fire the same chords (`ev_seq` 1). The
+  records of voices 0 and 1 are the same in both passes but for the pan. So DigiGlide plays in the first pass as
+  far as its own state shows; whether this take was silent is the owner's to say. dgwatch now refuses to
+  overwrite a capture and records the play flag (0 stopped, 1 playing, 2 seen before a [STOP], probably paused),
+  the playheads and the keys held. Captures are not committed (`notes/*.jsonl` ignored).

@@ -16,3 +16,4 @@ renders/M1/*.wav
 mod/core/build/
 renders/M5/.cache/
 renders/M5/*.wav
+notes/*.jsonl
