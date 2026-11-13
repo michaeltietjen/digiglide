@@ -627,3 +627,32 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   far as its own state shows; whether this take was silent is the owner's to say. dgwatch now refuses to
   overwrite a capture and records the play flag (0 stopped, 1 playing, 2 seen before a [STOP], probably paused),
   the playheads and the keys held. Captures are not committed (`notes/*.jsonl` ignored).
+
+## Build 16 (2026-11-13): GLID is the whole change
+
+- Image `DN2_1.12_DIGIGLIDE_16.syx`, sha256 `47c85c95f287e6b2bf362cf10351a88e809c1bc32f08d3a3259a44b80e429ae8`,
+  preflight PASS, built from the owner's stock 1.12. The core of test image 94 (the GLID fit rule) under its build
+  number. The stored format is build 15's. Given to the owner to flash; not flashed by me.
+- Build fix: the probe's tag string ("DG 16") sat in `.text`, and the build's instruction check read " 16" as a
+  68020 scaled index (`2031 3600`) and refused the image. The tag is now in `.rodata` (`mod/probe.S`). Any label
+  whose second digit is 6 or 7 would have failed the same way.
+- `build_dg.py` without `-o` takes the lowest free number, not the next one: it wrote image 3 (older images were
+  deleted from the workspace). Removed; build 16 was made with `-o`. Pass `-o` for numbered builds.
+- Suites on image 16 (emulator, digikit's venv Python): test_probe 13, test_rev5_trigs 6, test_rev5_record 14,
+  test_off_is_stock 6, make_brickglide_pad 4, test_rev5 36, test_every_machine 29: all pass.
+- Not in this build: p-locks from the panel (17), arp (18), and any fix for the fault below.
+- Open fault (owner, image 15, a SWARMER track, HOLD on, 64-step pattern): chords played by hand are silent while
+  the sequencer runs. With [PLAY] only they start after a full bar; while recording they stay silent in the first
+  pass. With the sequencer stopped the same chords sound, HOLD on or off. One take with HOLD off and another sound
+  sounded throughout. What the captures rule out: DigiGlide not firing (every key fires an event, six gates open),
+  p-locks (`tools/dglocks.py`: no lanes on panel tracks 13 and 14; the tool is unchecked against a track with
+  locks), and any difference in the frame's level, velocity or sampled voice records but pan. Not reproduced in
+  the emulator (which cannot run SWARMER). Untested suspect: HOLD on at sequencer start. The owner chose to move
+  on.
+- `DG.track` counts from zero: the owner's DigiGlide track reads 13, which is panel track 14. Earlier entries
+  that say "track 13" mean that value.
+- New read-only tools: `tools/dglocks.py TRACK` (the p-lock lanes of a track in the playing pattern) and
+  `tools/dgframe.py SECONDS OUT` (the whole 0xC00-byte frame with DG, the play flag and the playheads, about 25
+  samples a second).
+- Owner, jamming on image 15: "it's awesome using position to make melodies"; noted in GLIDE_SPEC.md with the
+  planned Harp and Arp modes.

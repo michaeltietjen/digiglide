@@ -236,6 +236,9 @@ peek_ranges:
         .long   AUD_RX, AUD_TX + AUD_N  | the SSI0 audio windows
 probe_hdr:
         .byte   0xF0, 0x00, 0x20, 0x3C, 0x7D, 0x00
+        | the tag is data: in .rodata, so the build's instruction check does not read it as code (" 16" decodes as
+        | a 68020 scaled index and failed build 16)
+        .section .rodata
         .balign 4
         .globl  dg_probe_tag
 dg_probe_tag:
@@ -243,3 +246,4 @@ probe_tag:
         .ascii  "DG "
         .asciz  XSTR(DG_BUILD)
         .balign 4
+        .text

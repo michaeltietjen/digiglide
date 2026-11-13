@@ -326,6 +326,10 @@ Each milestone must pass its test before anything is flashed. Commit to git afte
   - **Arp** (stock arpeggiator as the clock for DigiGlide's Arp mode; design brief and stock findings in `notes/build_log.md`, "Arp investigation").
   - **Live function keys** (the performance key layout: type and extension keys with LEDs, recorded with the trig).
   - **Strums** and the other PLAY modes (Strum, Slop, Harp, Pattern), with the storage extension they need.
+  - **POS as a melody control** (owner, 2026-11-13, jamming on image 15: "it's awesome using position to make
+    melodies"; "when thinking of harp and things, that might be powerful"). Turning POS under a held chord revoices
+    it, and the top voice moves like a tune. To design for: POS as the first parameter to lock per step (build 17),
+    and Harp / Arp walking the voicing that POS selects, so one knob moves the whole figure up and down the chord.
   - **Accent track.**
   - **Sound pack** and importable presets.
   - Also waiting: FM TONE and SWARMER support (below), VCNT counting chord voices only, the fast-glide step decision.
