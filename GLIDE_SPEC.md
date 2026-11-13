@@ -339,6 +339,32 @@ Each milestone must pass its test before anything is flashed. Commit to git afte
     - no stuck notes after stop.
 - [ ] **M7: Polish and release.** Video demo, Brickchord site page, elektronmods listing. (The 1.12 port moved forward: see "OS 1.12".)
 
+### Later milestone: a personal build with Digiwerk (not started)
+
+For the owner's unit only: DigiGlide together with Digiwerk (naturarum/dn2-cfw, GPL-2.0-or-later). This is a reading of both sources (Digiwerk at c3cf6c2, 2026-11-10; elekloader/elekloader at 59acfff, 2026-11-13; DigiGlide image 15), all addresses OS 1.12. Nothing here was built or run. Digiwerk's main-OS changes are elekloader format-2 mods on naturarum's fork (its own core-dn2 0.2), not on upstream core-dn2 0.4. Most hard collisions come only with its compressor ("C" packs: param-grow, param-rows, comp-ui, comp-link).
+
+| Where | DigiGlide | Digiwerk | Collision | Can DigiGlide move cheaply now? |
+| --- | --- | --- | --- | --- |
+| Parameter table operands | 56 bases repointed, 55 bounds +18 (dnfw paramtable, table built at build time) | param-grow: the same 56 bases, 57 bounds to 0x180, table copied at boot to 0x47D00000 (C packs) | Hard | No. DigiGlide becomes a client of Digiwerk's grown table: build-time coordination |
+| Display-row reader 0x400C257C | `jsr dg_row_stub` (10 bytes) | `jmp pg_disp_get` (C packs) | Hard, same instruction | No. Same answer: use Digiwerk's row service (it offers a borrowed display entry, flags, no randomiser) |
+| Table entries | 321..338 | 321..340 compressor, 341 parked trig slides | Hard in C packs | Partly: ids from the top (366..383) are one constant, but only inside the shared table |
+| Live FX words (knob edit buffer) | k 70..87 | k 70..89 compressor, k 70..96 sent to the DSP and saved | Hard in C packs: DigiGlide's knob values would be read as band settings | No: only k 90..100 are free there (11, DigiGlide needs 18). The buffer needs another home |
+| Stock rows edited in place | The relocated table is a copy of the stock one | lfo-dejavu, flanger and echo names patch stock rows (every pack) | Medium, silent: those edits are lost in DigiGlide's copy | Yes: build the table from the Digiwerk image, a small build change |
+| Appended code | dnfw area at the stock image end 0x4030C980, runs at 0x46800000..0x4680F570 | Blob at the same image end, runs at 0x47E00000..0x47F00000 | Build time only (RAM does not overlap) | Yes: place DigiGlide's area after Digiwerk's blob (`port_os.py` sets the address); the stock-hash check and preflight must accept a Digiwerk image |
+| Audio interrupt | 0x40025E82 | 0x40025e9e (C), 0x400272d4, 0x400269e6, 0x40026d86; frame tail 0xa80..0xabb | Near miss: different instructions, different frame bytes | Not needed. The combined interrupt time must be measured |
+| SysEx router 0x4012197A | The probe (device 0x7D) | Not hooked on the fork; upstream core-dn2 0.4 hooks the same 6 bytes | None on the fork | Yes if needed: subscribe to the core's SysEx event |
+| SYN page hooks 0x400C2636, 0x400C2656, draw 0x40018118 | Yes | None; upstream's optional machines-dn2 hooks the two page sites | None with Digiwerk | n/a (do not link machines-dn2) |
+| Stored kit record | +0x28af..+0x29d2 ("DGK1" + 288 bytes, the padding) | FX record +0x60..+0x97 = kit record +0x170c..+0x1743, check word 0xC3B1 | **None.** Digiwerk names the padding only as a further candidate, unused | Not needed |
+| Kit serializer | No hook today (planned: 0x400ddfa8, 0x400dddb6) | comp-link hooks 0x400dcf34, 0x400dcef0 and a vtable word (C) | Near miss | Yes: stay off those two functions' first bytes |
+| DSP | No DSP change; up to 5 more voices of a track sound | Replaces section 7; code room 80,404 of 83,838 bytes in the largest pack; estimated 73 to 77 % load typical, about 84 % worst (its notes) | Load only. If stock renders all 16 voices every block (open question 4), the chord voices add nothing; unconfirmed on a unit | n/a. The preflight must allow a non-stock section 7 |
+| Keys, pages, messages | [FUNC] + push E / F / G / H, three SYN pages, device id 0x7D | [FUNC] + turn on flanger SPD, MIXER pages 5 to 7, a fourth USB CONFIG item, arp menu | None found | n/a |
+
+**Kit bytes: no move proposed.** The stored bytes do not overlap, and Digiwerk's serializer hooks write only their own words. What overlaps is the live edit buffer (FX k 70..87), which holds nothing a project depends on: the store is the padding. Moving the buffer changes no saved data, so it can wait for this milestone. Optional, cheap and worth doing before more projects exist only if Digiwerk ever claims the padding: move "DGK1" to the end of the padding (+0x28dc..+0x29ff) and keep reading the old place.
+
+**Route.** elekloader's linker refuses two mods that touch the same bytes, overlapping regions, duplicate names, more than one core and undeclared image changes. It does not check shared FX slots, row ids (unless claimed, as Digiwerk does with `param-row:<id>`), kit padding, interrupt time or key combos. Upstream core-dn2 0.4 has no parameter-row or kit service on the Digitone II and its hooks collide with Digiwerk's comp-link, so the cleaner route is DigiGlide as a mod on **Digiwerk's fork**, not on upstream: drop dnfw's loader, area and paramtable, link relocatable, declare the 6 sites (interrupt, two SYN, draw, screen pass, SysEx), contribute 18 rows to its row collection, and find a new home for the edit buffer. Licences allow it for a personal build (GPL-2.0-or-later with AGPL-3.0-or-later combines under version 3 terms; a reading, not legal advice). The cheapest first step is smaller: a Digiwerk pack without the compressor, with DigiGlide applied on top of the Digiwerk main image (table built from that image, area moved after its blob, hash checks relaxed).
+
+Not determined: the fork's core and built mods were not in the clone (site lists come from its scripts and notes); the interrupt cost of Digiwerk's hooks and the combined ColdFire budget; combined flash headroom; whether DSP load depends on sounding voices; whether another parameter set has 18 free unsaved words for the edit buffer; how Digiwerk's arp and DigiGlide's planned arp sit together.
+
 ## Risks, open questions, safety
 
 The biggest unknown is how the stock OS allocates voices per track; M0 / M3 answer it before any DSP work.

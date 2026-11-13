@@ -58,7 +58,7 @@ There is no one-step installer yet. Building needs the m68k cross compiler and t
 - **digihealth** and **digiemu** by irpina (GPL-2.0-or-later): the origin of the probe, and the emulator.
 - **digikit** by m-dwyer (GPL-2.0-or-later): the emulator tooling the tests run in.
 - **digitone-2-modding-skill** by complex-ping (MIT): build helpers and the emulator harness.
-- **dn2-cfw (Digiwerk)** by naturarum (GPL-2.0): notes on the kit record and the parameter table.
+- **dn2-cfw (Digiwerk)** by naturarum (GPL-2.0-or-later): notes on the kit record and the parameter table.
 
 Which files derive from which project is in [NOTICE](NOTICE).
 

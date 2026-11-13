@@ -50,6 +50,6 @@ digikit (m-dwyer), GPL-2.0-or-later, and digiemu (irpina), GPL-2.0-or-later
 Read, no code taken
 -------------------
 
-naturarum/dn2-cfw (Digiwerk), GPL-2.0: its notes on the kit record, the kit serializer and the parameter table
+naturarum/dn2-cfw (Digiwerk), GPL-2.0-or-later: its notes on the kit record, the kit serializer and the parameter table
 (T6.0, T6.3, docs/parameter-table-growth.md) guided where DigiGlide keeps its settings. Addresses and layouts
 were checked against the author's own OS 1.12 file and unit.

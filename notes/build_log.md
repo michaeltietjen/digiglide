@@ -595,3 +595,24 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   stock file before patching.
 - Licence AGPL-3.0-or-later (a built image contains dnfw's loader; `mod/probe.S` and `tools/dgprobe.py` derive
   from dnfw). LICENSE, NOTICE and README added.
+
+## GLID is the whole change, and the recording report (2026-11-13, no image to flash yet)
+
+- GLID rule (GLIDE_SPEC.md, "GLID is the whole change"): model and C core changed together. `test_equiv` 6,000
+  progressions OK (largest difference 0.034 cent); `test_glid_fit` OK (9,000 cases: the last voice lands within one
+  block of GLID, none later; GLID 1 bar at 90 and 120 BPM lands on the bar line; GLID 0 is a hard change; TIME
+  Together, ORDR Together, no Move is block for block as before).
+- Found on the way: with the new timing one progression in 1,000 differed between model and C. SCRB held a
+  Converge on its meeting point, the voices were in unison, and ORDR's ranking (to 1/1024 cent) ordered them
+  differently in fixed point. ORDR now ranks to the nearest cent in both.
+- Demos: `model/render_glid_fit.py` (Bloom and Cascade up at GLID 1 bar, old and new). Old rule: the last voice
+  landed after 5.0 s (Bloom) and 3.25 to 3.6 s (Cascade up); new: 2.0 s. Owner: "love it".
+- Test image 94 (`build/proto`, the new core): ColdFire self-test equals the host build on 4 cases, 612
+  instructions a block; test_rev5_trigs 6 and test_rev5_record 14 pass. test_rev5, test_every_machine and the
+  interrupt cost run were still going when this was written.
+- Recording, the owner's report on image 15: keys played during the first pass of a live recording (the first 16
+  steps) may be silent; "not a game breaker but it's hard if doing something complex while recording".
+  Not reproduced: in the emulator (image 15, WAVETONE, HOLD off and on) each of three keys sounds its 5-voice chord
+  1 to 5 blocks after the press while recording, and `DG.last_note` follows the keys. (The pitch words at an attack
+  are where the glide starts, the previous chord: that is not a wrong chord.) The recording test never checked
+  sound during recording before this. Next: a `tools/dgwatch.py` capture from the unit while it happens.
