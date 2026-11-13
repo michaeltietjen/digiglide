@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "digitone-2-modding-skill": {
+      "source": "complex-ping/digitone-2-modding-skill",
+      "sourceType": "github",
+      "skillPath": "skills/digitone-2-modding-skill/SKILL.md",
+      "computedHash": "279f3e352950254aa01358a7b38fb6ab8b4a5d73ce4d9902b70aa9a56d970b84"
+    }
+  }
+}

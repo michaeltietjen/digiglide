@@ -1,0 +1,36 @@
+  ok   midglide: largest step 0.391 cent
+  ok   path_late: largest step 1.172 cent
+  ok   path_snap: largest step 1.562 cent
+  ok   path_wobble: largest step 0.781 cent
+  ok   path_smooth: largest step 1.172 cent
+  ok   path_linear: largest step 0.391 cent
+  ok   path_ease: largest step 0.391 cent
+  ok   path_swell: largest step 0.781 cent
+  ok   path_bounce: largest step 1.562 cent
+  ok   progression: 4 DigiGlide trigs at blocks [2, 8002, 16002, 24002] (90 BPM, a bar = 4000)
+  ok   two renders of the same frames are bit-identical (21.3 s)
+  FAIL progression: each voice's DSP pitch within 1 cent of the M1 model (79680 voice-blocks, largest 23301.801 cent)
+  ok   progression: largest step sent to the DSP 0.391 cent (limit 5)
+  ok   move_bloom: largest step 0.391 cent
+  ok   move_cascade_up: largest step 0.391 cent
+  ok   move_cascade_down: largest step 0.391 cent
+  ok   move_spiral: largest step 0.391 cent
+  ok   move_swoop: largest step 0.391 cent
+  ok   move_scatter: largest step 0.391 cent
+  ok   move_converge: largest step 0.391 cent
+  ok   move_fall: largest step 0.391 cent
+  ok   move_evol: largest step 0.391 cent
+  ok   progression: 4 DigiGlide trigs at blocks [2, 8002, 16002, 24002] (90 BPM, a bar = 4000)
+  ok   two renders of the same frames are bit-identical (21.3 s)
+  FAIL progression: each voice's DSP pitch within 1 cent of the M1 model (79680 voice-blocks, largest 21599.376 cent)
+  ok   progression: largest step sent to the DSP 0.391 cent (limit 5)
+  FAIL VCNT OFF: frames (31954) and render identical to stock OS
+  ok   VCNT OFF: frames (31954) and render identical to stock OS
+  ok   progression: 4 DigiGlide trigs at blocks [2, 8002, 16002, 24002] (90 BPM, a bar = 4000)
+  ok   two renders of the same frames are bit-identical (21.3 s)
+  FAIL progression: each voice's DSP pitch within 1 cent of the M1 model (79680 voice-blocks, largest 22797.581 cent)
+  ok   progression: largest step sent to the DSP 0.391 cent (limit 5)
+  ok   progression: 4 DigiGlide trigs at blocks [2, 8002, 16002, 24002] (90 BPM, a bar = 4000)
+  ok   two renders of the same frames are bit-identical (21.3 s)
+  ok   progression: each voice's DSP pitch within 1 cent of the M1 model (76800 voice-blocks: words vs model 0.195 + DSP vs words 0.532 = 0.728 cent at most)
+  ok   progression: largest step sent to the DSP 0.391 cent (limit 5)

@@ -1,0 +1,22 @@
+Notes each chord settles on (scientific names, C4 = MIDI 60; the Digitone screen names these an octave higher). Shared gain 0.129.
+
+progression: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/01_bloom: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/02_cascade_up: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/03_cascade_down: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/04_spiral: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/05_swoop: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/06_scatter: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/07_converge: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/08_fall: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4 | F2  C3  Eb3  Ab3  C4 | G2  Bb2  D3  F3  Bb3
+moves/09_evol: C2  G2  Bb2  G3  C4 | Eb2  F2  C3  F3  D4 | D2  Ab2  Ab2  Ab3  Eb4 | G2  Bb2  C3  F3  Ab4
+paths/00_smooth: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/01_linear: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/02_ease: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/03_swell: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/04_bounce: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/05_late: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/06_snap: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/07_wobble: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/08_semitones: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4
+paths/09_scale_steps: C2  G2  Bb2  G3  C4 | Ab2  C3  Eb3  G3  C4

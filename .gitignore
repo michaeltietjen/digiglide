@@ -1,0 +1,18 @@
+# Elektron firmware: never commit or share (stock image and anything extracted from it)
+*.syx
+stock-backup/
+# emulator frame captures (large, derived from the OS image)
+renders/**/.*_frames.bin
+experiments/out/*.npz
+# installed third-party skill (reinstall with skills-lock.json)
+.claude/
+.agents/
+.DS_Store
+__pycache__/
+# M1 model renders: regenerate with model/render_m1.py (deterministic)
+renders/M1/**/*.wav
+renders/M1/*.wav
+# host builds of the C core (test_equiv.py rebuilds)
+mod/core/build/
+renders/M5/.cache/
+renders/M5/*.wav

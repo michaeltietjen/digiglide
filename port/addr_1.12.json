@@ -1,0 +1,439 @@
+{
+ "from": "Digitone II OS 1.11",
+ "to": "Digitone II OS 1.12",
+ "how": "port/addrmap.py: code and image data by masked byte match, RAM by the literals in mapped code",
+ "map": {
+  "0x40000400": {
+   "to": "0x40000400",
+   "how": "image"
+  },
+  "0x4000053E": {
+   "to": "0x4000053E",
+   "how": "image"
+  },
+  "0x4000221C": {
+   "to": "0x4000221C",
+   "how": "image"
+  },
+  "0x40002256": {
+   "to": "0x40002256",
+   "how": "image"
+  },
+  "0x400173CA": {
+   "to": "0x400173CA",
+   "how": "image"
+  },
+  "0x40017428": {
+   "to": "0x40017428",
+   "how": "image"
+  },
+  "0x400175E4": {
+   "to": "0x400175E4",
+   "how": "image"
+  },
+  "0x40018214": {
+   "to": "0x40018214",
+   "how": "image"
+  },
+  "0x40025E44": {
+   "to": "0x40025E44",
+   "how": "the audio ISR cmpi.l (opcode at the same address; its operand, the DMA half bound, differs by design)"
+  },
+  "0x40025E82": {
+   "to": "0x40025E82",
+   "how": "image"
+  },
+  "0x40025E88": {
+   "to": "0x40025E88",
+   "how": "image"
+  },
+  "0x40025E94": {
+   "to": "0x40025E94",
+   "how": "image"
+  },
+  "0x40027AC0": {
+   "to": "0x40027AC0",
+   "how": "image"
+  },
+  "0x40027AC6": {
+   "to": "0x40027AC6",
+   "how": "image"
+  },
+  "0x40027AFC": {
+   "to": "0x40027AFC",
+   "how": "image"
+  },
+  "0x40029094": {
+   "to": "0x40029094",
+   "how": "image"
+  },
+  "0x40030AF8": {
+   "to": "0x40030AF8",
+   "how": "image"
+  },
+  "0x40031FD8": {
+   "to": "0x40031FD8",
+   "how": "image"
+  },
+  "0x40031FEE": {
+   "to": "0x40031FEE",
+   "how": "image"
+  },
+  "0x40032422": {
+   "to": "0x40032422",
+   "how": "twin loop: region shift 0, bytes equal"
+  },
+  "0x400325E2": {
+   "to": "0x400325E2",
+   "how": "twin loop: region shift 0, bytes equal"
+  },
+  "0x4003CDBA": {
+   "to": "0x4003CDBA",
+   "how": "image"
+  },
+  "0x4003E41A": {
+   "to": "0x4003E41A",
+   "how": "image"
+  },
+  "0x4003EFDE": {
+   "to": "0x4003EFDE",
+   "how": "image"
+  },
+  "0x400446C2": {
+   "to": "0x400446C2",
+   "how": "image"
+  },
+  "0x40044828": {
+   "to": "0x40044828",
+   "how": "image"
+  },
+  "0x40046BFE": {
+   "to": "0x40046BFE",
+   "how": "image"
+  },
+  "0x4004F8FE": {
+   "to": "0x4004F8FE",
+   "how": "image"
+  },
+  "0x40054690": {
+   "to": "0x40054690",
+   "how": "image"
+  },
+  "0x4006448A": {
+   "to": "0x4006448A",
+   "how": "image"
+  },
+  "0x4006538E": {
+   "to": "0x4006538E",
+   "how": "image"
+  },
+  "0x4006598A": {
+   "to": "0x4006598A",
+   "how": "image"
+  },
+  "0x4006EB9E": {
+   "to": "0x4006EB9E",
+   "how": "image"
+  },
+  "0x4006EF14": {
+   "to": "0x4006EF14",
+   "how": "image"
+  },
+  "0x400C2418": {
+   "to": "0x400C257C",
+   "how": "image"
+  },
+  "0x400C241C": {
+   "to": "0x400C2580",
+   "how": "image"
+  },
+  "0x400C243C": {
+   "to": "0x400C25A0",
+   "how": "image"
+  },
+  "0x400C24D2": {
+   "to": "0x400C2636",
+   "how": "image"
+  },
+  "0x400C24EE": {
+   "to": "0x400C2652",
+   "how": "image"
+  },
+  "0x400C24F2": {
+   "to": "0x400C2656",
+   "how": "image"
+  },
+  "0x400CF7BE": {
+   "to": "0x400CF922",
+   "how": "image"
+  },
+  "0x400CF906": {
+   "to": "0x400CFA6A",
+   "how": "image"
+  },
+  "0x400CF950": {
+   "to": "0x400CFAB4",
+   "how": "image"
+  },
+  "0x400D7864": {
+   "to": "0x400D79C8",
+   "how": "image"
+  },
+  "0x400D7CD0": {
+   "to": "0x400D7E34",
+   "how": "image"
+  },
+  "0x400DBCC4": {
+   "to": "0x400DBE28",
+   "how": "image"
+  },
+  "0x400DC02A": {
+   "to": "0x400DC18E",
+   "how": "image"
+  },
+  "0x400DC4D0": {
+   "to": "0x400DC634",
+   "how": "image"
+  },
+  "0x400DC7F0": {
+   "to": "0x400DC954",
+   "how": "image"
+  },
+  "0x400DD1EA": {
+   "to": "0x400DD34E",
+   "how": "image"
+  },
+  "0x400DD6A6": {
+   "to": "0x400DD80A",
+   "how": "image"
+  },
+  "0x4010756E": {
+   "to": "0x4010784E",
+   "how": "image"
+  },
+  "0x40114954": {
+   "to": "0x40114C34",
+   "how": "image"
+  },
+  "0x4011545C": {
+   "to": "0x4011573C",
+   "how": "image"
+  },
+  "0x4011D2F4": {
+   "to": "0x4011D5D4",
+   "how": "image"
+  },
+  "0x4011D398": {
+   "to": "0x4011D678",
+   "how": "image"
+  },
+  "0x40134490": {
+   "to": "0x40134770",
+   "how": "image"
+  },
+  "0x4018A97A": {
+   "to": "0x4018AC5A",
+   "how": "image"
+  },
+  "0x401F7F94": {
+   "to": "0x401F83A4",
+   "how": "image"
+  },
+  "0x401F7FC8": {
+   "to": "0x401F83D8",
+   "how": "image"
+  },
+  "0x401FCAC8": {
+   "to": "0x401FCED8",
+   "how": "image"
+  },
+  "0x40210800": {
+   "to": "0x40210CB8",
+   "how": "image"
+  },
+  "0x40218572": {
+   "to": "0x40218A2A",
+   "how": "image"
+  },
+  "0x402876F8": {
+   "to": "0x40287C38",
+   "how": "read from the ISR instruction at 0x40025e82 (move.l abs,%d0)"
+  },
+  "0x4028DA6E": {
+   "to": "0x4028DFAE",
+   "how": "image"
+  },
+  "0x4028DA70": {
+   "to": "0x4028DFB0",
+   "how": "image"
+  },
+  "0x402A0B8C": {
+   "to": "0x402A10CC",
+   "how": "image"
+  },
+  "0x402A0DEC": {
+   "to": "0x402A132C",
+   "how": "image"
+  },
+  "0x4030B980": {
+   "to": "0x4030C980",
+   "how": "end of MAIN OS (1.12 MAIN is 4096 bytes longer)"
+  },
+  "0x4058E54C": {
+   "to": "0x4058F54C",
+   "how": "ram (257/257 references agree)"
+  },
+  "0x4243298C": {
+   "to": "0x4243398C",
+   "how": "ram (123/127 references agree)"
+  },
+  "0x42432AD4": {
+   "to": "0x42433AD4",
+   "how": "ram (the SYN page table; 0x42432AE4 is its second entry, 159/164 references agree; base read in 1.12 at 0x400c2642)"
+  },
+  "0x42432AE4": {
+   "to": "0x42433AE4",
+   "how": "ram (159/164 references agree)"
+  },
+  "0x4243325C": {
+   "to": "0x4243425C",
+   "how": "ram (142/146 references agree)"
+  },
+  "0x42440958": {
+   "to": "0x42441958",
+   "how": "ram (34/34 references agree)"
+  },
+  "0x42C5A994": {
+   "to": "0x42C5B994",
+   "how": "ram (243/243 references agree): 1 while the sequencer plays"
+  },
+  "0x42C5A9A0": {
+   "to": "0x42C5B9A0",
+   "how": "ram (243/243 references agree)"
+  },
+  "0x42C647AC": {
+   "to": "0x42C657AC",
+   "how": "ram (31/31 references agree)"
+  },
+  "0x42C649A8": {
+   "to": "0x42C659A8",
+   "how": "ram (36/36 references agree)"
+  },
+  "0x42C64B3C": {
+   "to": "0x42C65B3C",
+   "how": "ram (25/25 references agree)"
+  },
+  "0x42C64CD0": {
+   "to": "0x42C65CD0",
+   "how": "ram (20/20 references agree)"
+  },
+  "0x44507ED8": {
+   "to": "0x44508ED8",
+   "how": "ram (649/649 references agree)"
+  },
+  "0x445A1E30": {
+   "to": "0x445A2E30",
+   "how": "ram (12/12 references agree)"
+  },
+  "0x446478D0": {
+   "to": "0x446488D0",
+   "how": "ram (1677/1678 references agree)"
+  },
+  "0x446483D0": {
+   "to": "0x446493D0",
+   "how": "ram (26/26 references agree)"
+  },
+  "0x46700000": {
+   "to": "0x46700000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x46710000": {
+   "to": "0x46710000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x467C8000": {
+   "to": "0x467C8000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x467FFFFF": {
+   "to": "0x467FFFFF",
+   "how": "ram (2/2 references agree)"
+  },
+  "0x46800000": {
+   "to": "0x46800000",
+   "how": "ram (2/2 references agree)"
+  },
+  "0x46900000": {
+   "to": "0x46900000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x46A00000": {
+   "to": "0x46A00000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x46A80000": {
+   "to": "0x46A80000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x46A8F000": {
+   "to": "0x46A8F000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x46B00000": {
+   "to": "0x46B00000",
+   "how": "free RAM above BSS: unchanged (checked in the emulator)"
+  },
+  "0x80002510": {
+   "to": "0x80002510",
+   "how": "ram (7/7 references agree)"
+  },
+  "0x800052A0": {
+   "to": "0x800052A0",
+   "how": "ram (128/128 references agree)"
+  },
+  "0x80005E40": {
+   "to": "0x80005E40",
+   "how": "ram (13/13 references agree)"
+  },
+  "0x80005E60": {
+   "to": "0x80005E60",
+   "how": "ram (13/13 references agree)"
+  },
+  "0x8000521A": {
+   "to": "0x8000521A",
+   "how": "track mute mask (u16, bit t = track t+1); found on 1.12 by experiment (FUNC + TRIG), 1.11 address assumed equal, not checked"
+  },
+  "0x4012166E": {
+   "to": "0x4012194E",
+   "how": "image (SysEx router entry, same shift as the probe hook inside it; used by tests only)"
+  },
+  "0x4012169A": {
+   "to": "0x4012197A",
+   "how": "image (addrmap.py; hook bytes 47f9 + ELK_HDR checked)"
+  },
+  "0x40207AE6": {
+   "to": "0x40207F9E",
+   "how": "image (addrmap.py; holds f0 00 20 3c)"
+  },
+  "0x401233F2": {
+   "to": "0x401236D2",
+   "how": "image (addrmap.py)"
+  },
+  "0x4058E8D4": {
+   "to": "0x4058F8D4",
+   "how": "ram (78/78 references agree)"
+  },
+  "0x40018118": {
+   "to": "0x40018118",
+   "how": "image (the SYN page draw; 1.12 disassembly read; 1.11 assumed equal, as 0x40018214 inside it)"
+  },
+  "0x4210C08C": {
+   "to": "0x4210D08C",
+   "how": "ram (live kits; 1.12 from naturarum/dn2-cfw T6.0 and the unit; the 1.11 value is ASSUMED (1.12 - 0x1000))"
+  },
+  "0x405CD96C": {
+   "to": "0x405CE96C",
+   "how": "ram (working project image; dnfw 1.11 0x405cd85c + 0x110, 1.12 from naturarum/dn2-cfw T6.0, read on the unit)"
+  }
+ }
+}

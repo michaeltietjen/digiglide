@@ -1,0 +1,41 @@
+{
+ "name": "BRICKGLIDE PAD",
+ "digiglide": {
+  "type": 1,
+  "ext": 2,
+  "key": 0,
+  "voic": 64,
+  "pos": 64,
+  "glid": 5,
+  "play": 0,
+  "hold": 1,
+  "path": 0,
+  "time": 0,
+  "ordr": 0,
+  "stag": 0,
+  "move": 0,
+  "drft": 8,
+  "vib": 4,
+  "scrb": 127,
+  "vcnt": 5,
+  "bass": 2
+ },
+ "sound_slots": {
+  "WAV1 (26)": "0x0000",
+  "WAV2 (32)": "0x0000",
+  "TUN2 (31)": "0x4008",
+  "DRIF (38)": "0x2000",
+  "LEV1 (30)": "0x6400",
+  "LEV2 (36)": "0x6400",
+  "AMP ATK (81)": "0x5400",
+  "AMP HOLD (82)": "0x7f00",
+  "AMP DEC (83)": "0x7f00",
+  "AMP SUS (84)": "0x7f00",
+  "AMP REL (85)": "0x6800",
+  "REV send (87)": "0x4000",
+  "DEL send (86)": "0x2600",
+  "CHR send (88)": "0x2d00"
+ },
+ "machine": "WAVETONE",
+ "stored": "BRICKGLIDE_PAD.stored.bin (stock converter 0x400dd6a6, 512 bytes)"
+}

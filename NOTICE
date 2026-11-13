@@ -1,0 +1,55 @@
+DigiGlide
+Copyright (C) 2026 Michael Tietjen
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General
+Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option)
+any later version. It is distributed WITHOUT ANY WARRANTY; see LICENSE.
+
+DigiGlide is unofficial. It is not made, endorsed or supported by Elektron Music Machines. "Elektron" and
+"Digitone" are trademarks of their owner. This repository contains no Elektron firmware, no part extracted from
+it and no file generated from it: a firmware image is built on your own computer from your own copy of the
+official OS file.
+
+Files derived from other projects
+---------------------------------
+
+mod/probe.S
+    Derived from dnfw (angellinares/dn2_firmware_explore), csrc/usbprobe/probe.S, AGPL-3.0-or-later, which is
+    derived from irpina/digihealth (sysinfo.s), GPL-2.0-or-later.
+
+tools/dgprobe.py
+    Protocol and codec derived from dnfw, tools/dn2probe.py, AGPL-3.0-or-later, which is derived from
+    irpina/digihealth (tools/digiusb.py), GPL-2.0-or-later.
+
+mod/preflight.py
+    The rules of dnfw v0.50's safety check, applied to the stock file of the OS being built. Calls dnfw.
+
+port/harness_1.12.patch
+    Local changes to two other projects, kept as a patch with a few lines of their context:
+    complex-ping/digitone-2-modding-skill, scripts/cfkit.py (MIT), and m-dwyer/digikit,
+    devices/digitone-ii.toml (GPL-2.0-or-later).
+
+model/digiglide.py, mod/core/dg_core.c
+    The glide planner, voice leading, paths, Moves and tables are a port of Brickglide, part of
+    michaeltietjen/brickchord (brickchord/ambient.py, engine.py, main.py), MIT, by the same author.
+
+Used at build or test time, not included
+----------------------------------------
+
+dnfw (angellinares/dn2_firmware_explore), AGPL-3.0-or-later
+    Firmware container and signing, the runtime loader (csrc/runtime/loader.S, built into every image), the code
+    area, the parameter table relocation (dnfw.patch.paramtable), verification. A built DigiGlide image therefore
+    contains dnfw code, which is why DigiGlide is AGPL-3.0-or-later.
+
+digitone-2-modding-skill (complex-ping), MIT
+    The ColdFire build helpers and the emulator harness the tests drive (cfmod, cfkit, emu).
+
+digikit (m-dwyer), GPL-2.0-or-later, and digiemu (irpina), GPL-2.0-or-later
+    The emulators (ColdFire and SHARC) the tests run in.
+
+Read, no code taken
+-------------------
+
+naturarum/dn2-cfw (Digiwerk), GPL-2.0: its notes on the kit record, the kit serializer and the parameter table
+(T6.0, T6.3, docs/parameter-table-growth.md) guided where DigiGlide keeps its settings. Addresses and layouts
+were checked against the author's own OS 1.12 file and unit.

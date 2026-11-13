@@ -1,0 +1,119 @@
+# Local changes outside this repository that the OS 1.12 port needs (apply by hand or with patch -p0 from /).
+# 1. the skill's cfkit.py: OS-selected addresses, the DMA half bound, the OS's EMAC list
+--- cfkit.py (skill, before)
++++ cfkit.py (skill, after)
+@@ -34,8 +34,12 @@
+ from emu.longrun import spin  # noqa: E402
+ INTFRCH0 = 0xFC048010
+ 
+-VECTOR, DRIVER, COUNTER, GATE = 191, 0x400CF7BE, 0x402876F8, 0x4058E54C
+-TXLIST, BUILD, BUILT = 0x80002510, 0x400CF906, 0x400CF950
++try:                                       # DigiGlide: the OS a caller selected (osver.A maps a 1.11 address); else 1.11
++    from osver import A as _A, OS as _OS
++except ImportError:
++    _A, _OS = (lambda x: x), '1.11'
++VECTOR, DRIVER, COUNTER, GATE = 191, _A(0x400CF7BE), _A(0x402876F8), _A(0x4058E54C)
++TXLIST, BUILD, BUILT = _A(0x80002510), _A(0x400CF906), _A(0x400CF950)
+ RECORD, PLAY, STOP = (2, 2), (2, 3), (2, 4)
+ INTFRCH0, SEQ_FORCE, SEQ_VECTOR = 0xFC048010, 0x1000, 108   # ISR tail 0x40027afc forces INTC0 source 44 = vector 108
+                                                            # (0x400d7864, the sequencer tick); fastemu never delivers it
+@@ -93,13 +97,13 @@
+         self.uc = self.m.uc
+         self.pc = pc
+         import cfemac
+-        cfemac.Emac(self.uc).install(cfemac.load_rows(str(P.DATA / 'emac_rows_1.11.txt')))   # (dn2setup.py makes it)
++        cfemac.Emac(self.uc).install(cfemac.load_rows(str(P.DATA / f'emac_rows_{_OS}.txt')))   # the OS's own EMAC sites   # (dn2setup.py makes it)
+         self.pend, self.sent, self.hooks = {}, [], []
+         self.seq, self.forced_n, self.isr_open = True, {}, 0
+         # The panel TX ring is never drained in this emulator: after ~4 KB of LED traffic every LED write spins for ever at
+         # 0x4000221c (hit at random by long UI tests). NOP the "no room yet" branch for every run.
+-        if self.r(0x40002256, 2) == b'\x65\xc4':
+-            self.w(0x40002256, b'\x4e\x71'); self.uc.ctl_flush_tb()
++        if self.r(_A(0x40002256), 2) == b'\x65\xc4':
++            self.w(_A(0x40002256), b'\x4e\x71'); self.uc.ctl_flush_tb()
+ 
+     r = lambda s, va, n: bytes(s.uc.mem_read(va, n))
+     w = lambda s, va, b: s.uc.mem_write(va, bytes(b))
+@@ -159,7 +163,7 @@
+         uc = self.uc
+         sp = uc.reg_read(UC_M68K_REG_A7)
+         ret, tx_len, tx, rx_len, rx = struct.unpack('>IIIII', self.r(sp, 20))
+-        n = self.u32(0x42440958)
++        n = self.u32(_A(0x42440958))
+         self.pend.update(sp=sp, ret=ret, n=min(n, 2800), tx=self.r(tx, tx_len),
+                          regs=[uc.reg_read(x) for x in (UC_M68K_REG_D2, UC_M68K_REG_A2, UC_M68K_REG_A3)])
+         uc.reg_write(UC_M68K_REG_D0, tx_len); uc.reg_write(UC_M68K_REG_D1, self.pend['n'])
+@@ -185,7 +189,10 @@
+             self.run(between)
+             uc.mem_write(GATE, bytes(4)); uc.mem_write(COUNTER, bytes(4))
+             self.nframe = getattr(self, 'nframe', 0) + 1
+-            uc.mem_write(0xFC045640, struct.pack('>I', 0x4E6E0100 if self.nframe & 1 else 0x4E6E0A00))
++            if not hasattr(self, 'dma_half'):           # the audio ISR's "first half" bound: its own cmpi.l operand
++                self.dma_half = self.u32(_A(0x40025E44) + 2)  # (0x4E6E0900 on 1.11, 0x4E6E8900 on 1.12: the buffer
++                                                              # moved 0x8000 up); positions half - 0x800 / half + 0x100
++            uc.mem_write(0xFC045640, struct.pack('>I', self.dma_half - 0x800 if self.nframe & 1 else self.dma_half + 0x100))
+             uc.reg_write(UC_M68K_REG_PC, self.pc)
+             n_, ok_ = self.fastemu.run_isr(self.m, VECTOR, 2_000_000)
+             self.isr_open += not ok_
+@@ -227,7 +234,7 @@
+ SPARE = 0x46A00000                       # unmapped in digikit: 2 MB for stacks, rings, scratch buffers
+ CALL_SP, CALL_RET = 0x46A80000, 0x46A8F000
+ RING0 = 0x46B00000                       # rings at RING0 + 0x10000 * n
+-KNOB_DRAWER = 0x4006448A                 # the sound pages' knob drawer (page, ctx, x, y, entry, value, ...)
++KNOB_DRAWER = _A(0x4006448A)                # the sound pages' knob drawer (page, ctx, x, y, entry, value, ...)
+ BE = lambda v: struct.pack('>I', v & 0xFFFFFFFF)
+ 
+ 
+@@ -286,7 +293,7 @@
+ 
+     # -- sounds ---------------------------------------------------------------------------------------------------------
+     def sound(self, t):
+-        return self.h.u32(0x800052A0) + 52 + 1163 * t
++        return self.h.u32(_A(0x800052A0)) + 52 + 1163 * t
+ 
+     def mach(self, t):
+         return self.h.r(self.sound(t) + 0xDE, 1)[0]
+@@ -346,7 +353,7 @@
+     def tail(self, words):
+         """Fake the unused tail of the DSP reply (16 u16 at 0x80005e40, a free DSP -> ColdFire channel) -- pass as
+         h.frames(each=k.tail_writer(words)) so it is there before every frame."""
+-        self.h.w(0x80005E40, b''.join(struct.pack('>H', x) for x in words))
++        self.h.w(_A(0x80005E40), b''.join(struct.pack('>H', x) for x in words))
+ 
+     def tail_writer(self, words):
+         return lambda i: self.tail(words)
+@@ -354,7 +361,7 @@
+     # -- sequencer ------------------------------------------------------------------------------------------------------
+     def play(self, frames, bpm=300, between=150_000, each=None):
+         h = self.h
+-        h.w(0x402A0DEC, BE(bpm * 120))                    # (the UI resets the tempo word: set it right before PLAY)
++        h.w(_A(0x402A0DEC), BE(bpm * 120))                    # (the UI resets the tempo word: set it right before PLAY)
+         start = len(h.sent)
+         h.tap(PLAY)
+         h.frames(frames, between=between, each=each)
+
+# 2. digikit devices/digitone-ii.toml: the 1.12 firmware entry
+diff --git a/devices/digitone-ii.toml b/devices/digitone-ii.toml
+index 8fe9c62c..7d02a132 100644
+--- a/devices/digitone-ii.toml
++++ b/devices/digitone-ii.toml
+@@ -35,6 +35,17 @@ readiness_contract = "main-panel-v1"
+ # The SHARC+ DSP the coupled audio runs (see devices/digitakt-ii.toml).
+ dsp = { image = "dn2-1.11", idle_start = 0xb88a49, idle_end = 0xb88abb, idle_head = 0xb88aab }
+ 
++[[firmware]]
++version = "1.12"
++sha256 = "7e5b8a733d4ab1fdf7e5d22757f7d8eddaa3cbf71d0858874a791844c02ceb35"
++filename = "Digitone_II_OS1.12.syx"
++# Added locally for DigiGlide's 1.12 port: sections 2, 7 and 8 are byte-identical to 1.11; only MAIN differs.
++main_sha256 = "a098f620019b2ad38fd7e0397df39501fb1cf6bc26d0283915f34c49446fdf1a"
++boot_contract = "main-os-oracle-v1"
++symbol_profile = "elektron-rtos-v1"
++readiness_contract = "main-panel-v1"
++dsp = { image = "dn2-1.11", idle_start = 0xb88a49, idle_end = 0xb88abb, idle_head = 0xb88aab }
++
+ [panel]
+ # The wire carries (channel, bit); the firmware reports a control code.
+ # Channels 0..5 are linear -- code = channel * 8 + bit + 1, codes 1..48 --
+
+# 3. data/emac_rows_1.12.txt: ~/dn2-workspace/data, made from a 1.12 disassembly by cfemac.list_rows (see port/README.md)

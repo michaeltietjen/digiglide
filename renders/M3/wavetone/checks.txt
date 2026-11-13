@@ -1,0 +1,22 @@
+ok   GLIDE: one attack only (block 2), chords 2-4 glide
+ok   GLIDE run: no other voice plays []
+ok   chord 2 voice 2: 55.00 -> 57.00 (a chord tone, off by 0.000), monotonic, 75% of the way at half of GLID 1bar (3000 blocks)
+ok   chord 3 voice 1: 52.00 -> 53.00 (a chord tone, off by 0.000), monotonic, 75% of the way at half of GLID 1bar (3000 blocks)
+ok   chord 4 voice 0: 48.00 -> 47.00 (a chord tone, off by 0.000), monotonic, 75% of the way at half of GLID 1bar (3000 blocks)
+ok   chord 4 voice 1: 53.00 -> 50.00 (a chord tone, off by 0.000), monotonic, 75% of the way at half of GLID 1bar (3000 blocks)
+ok   chord 4 voice 2: 57.00 -> 55.00 (a chord tone, off by 0.000), monotonic, 75% of the way at half of GLID 1bar (3000 blocks)
+ok   DSP voice 0 bar 1: plays 48.04, frame says 48.00
+ok   DSP voice 0 bar 2: plays 48.12, frame says 48.00
+ok   DSP voice 0 bar 3: plays 48.02, frame says 48.00
+ok   DSP voice 0 bar 4: plays 47.06, frame says 47.01
+ok   DSP voice 1 bar 1: plays 52.00, frame says 52.00
+ok   DSP voice 1 bar 2: plays 52.01, frame says 52.00
+ok   DSP voice 1 bar 3: plays 53.08, frame says 52.99
+ok   DSP voice 1 bar 4: plays 50.07, frame says 50.03
+ok   DSP voice 2 bar 1: plays 55.02, frame says 55.00
+ok   DSP voice 2 bar 2: plays 57.05, frame says 56.98
+ok   DSP voice 2 bar 3: plays 57.01, frame says 57.00
+ok   DSP voice 2 bar 4: plays 55.07, frame says 55.02
+ok   stock: 4 chords x 3 tones = 12 attacks, notes as written
+ok   stock: nothing plays after bar 4 []
+OK
