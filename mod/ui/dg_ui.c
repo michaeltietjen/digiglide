@@ -51,6 +51,9 @@ uint32_t dg_row(uint32_t k)
     uint32_t *d = rowbuf[k], i;
     for (i = 0; i < 17; i++)
         d[i] = s[i];
+#ifdef DG_LOCKABLE                                      /* experiment (build 17): leave six rows lockable */
+    if (!((DG_LOCKABLE >> k) & 1))
+#endif
     d[0] |= 8;
     d[9] = d[10] = d[11] = d[12] = 0;
     return (uint32_t)d;

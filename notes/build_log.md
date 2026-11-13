@@ -677,3 +677,16 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
 - Not measured yet: whether the setter takes any 15-bit value; the stock routine that clears a lock; what a
   machine change, a track copy and a pattern copy do to lanes 0 and 100; the stock "a trig is held" state and the
   held step; the inverted display.
+- Owner's choice (2026-11-13): the six lockable parameters are POS, TYPE, EXT (lane 0) and VOIC, GLID, MOVE
+  (lane 100).
+- Leaving the rows lockable is not enough (`experiments/b17_lockable_row.py`, test image 95 = image 16 built with
+  `-D DG_LOCKABLE=0x103B`, which skips the "unlockable" flag on those six rows; FM TONE track, CHORD page, grid
+  recording, trig 1 held, knob E turned): the header shows the held-step symbol, but stock writes the value (POS
+  64 -> 100 in the store), calls the lock setter 0 times and makes no lane. So stock does not lock a row whose
+  record is in the FX group, whatever its flags; DigiGlide has to write the lock itself when a step is held.
+- Looking for stock's "a step is held" state (`experiments/b17_held_state.py`): not in the app object (451,596
+  bytes compared across idle, grid recording, trig 1 held, trig 5 held: nothing follows the keys). A compare of
+  all working RAM (0x40300000..0x44700000) gives 680 bytes that follow the held trig, mostly draw buffers, not
+  sorted yet, and no byte that follows grid recording on / off (the [RECORD] tap may not have landed in that run).
+- Emulator note: a script must import dgkit before cfkit. dgkit's osver sets the 1.12 main image for the
+  emulator's symbols; with cfkit first the panel keys go nowhere (no track select, [SYN] does not cycle).
