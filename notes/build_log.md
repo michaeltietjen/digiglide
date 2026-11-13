@@ -656,3 +656,24 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   samples a second).
 - Owner, jamming on image 15: "it's awesome using position to make melodies"; noted in GLIDE_SPEC.md with the
   planned Harp and Arp modes.
+
+## Build 17, first measurement (2026-11-13): where p-locks can live
+
+- Slots a machine leaves unused among the sound's 101 (stock parameter table, 320 records, read by group): FM TONE
+  uses 25..64 but 34 and 49; WAVETONE 25..49; FM DRUM 25..54; SWARMER 25..32. LFOs 1..24, filter 66..79, amp
+  80..92 (FX sends 86..88), portamento 93, 94, FX 95..99. No record on any machine uses slots 0, 65 or 100. So
+  per-machine lanes would give 18 locks on SWARMER and 4 on FM TONE: not a design.
+- The lock table (`experiments/b17_lanes.py`, image 16, emulator, FM TONE): the stock setter (0x4004F8FE in 1.11
+  terms: ctx, step, slot, value) accepts every slot 0..100 on any machine and refuses 101 and up. A lane is 129
+  words, -1 = no lock. One pool of 80 lanes per pattern for all 16 tracks; the 81st lock on a new (track, slot)
+  is refused. The word at the table's head goes ffff -> 0000 with the first lock.
+- What the DSP is sent (`experiments/b17_lanes_frame.py`, 1,504 frames against a run without the lock): a lock on
+  slot 0 or slot 100 changes no frame word at all. A lock on slot 65 lands in the voice's record (frame +0x12a),
+  as slot 70 (the control) lands at +0x134; whether the DSP reads word 65 is not known.
+- So: two lanes that exist on every machine and never reach the DSP, slots 0 and 100, 15 bits each. Plan: pack
+  the performance parameters into them, with "not locked" as one value of each field. Lane 0: POS (129) x TYPE (5)
+  x EXT (9) = 5,805. Lane 100: VOIC (129) x GLID (14) x MOVE (11) = 19,866. Two lanes a DigiGlide track out of the
+  pattern's 80. The locks images <= 14 made on WAVETONE (slots 50..64, 93, 94) stay honoured as now.
+- Not measured yet: whether the setter takes any 15-bit value; the stock routine that clears a lock; what a
+  machine change, a track copy and a pattern copy do to lanes 0 and 100; the stock "a trig is held" state and the
+  held step; the inverted display.
