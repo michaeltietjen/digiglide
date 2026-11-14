@@ -738,3 +738,4 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   second build of the committed source. On it: test_b17_locks 20, test_rev5 36, test_every_machine 30 (its check
   "no row can be p-locked" rewritten: only the six rows, no row randomised), test_rev5_record 14, test_probe 13,
   test_rev5_trigs 6, test_off_is_stock 6, make_brickglide_pad 4: all pass. Not flashed by me; not yet on the unit.
+- Owner flashed image 17 (2026-11-13): "seems to work". No detail yet on which locks were tried.
