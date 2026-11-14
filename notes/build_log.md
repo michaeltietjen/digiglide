@@ -820,3 +820,41 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
 - Image: `DN2_1.12_DIGIGLIDE_18.syx`, sha256 51dda574129673e22391090af90793392214c11aa28304499f2c3518ed344f1b,
   preflight 22/22, `__bss_end` 0x46810384. Its code differs from the tested prototype in the build number only
   (10 bytes). Not flashed by me.
+
+## Image 18 on the unit: "the arp is very quiet on quicker progressions" (2026-11-14)
+
+- Report (owner, unit): quiet arp on quicker progressions. Guess: since build 12 every DigiGlide voice has AMP RSET
+  forced off, short arp notes are cut before the envelope has risen. Which case (faster SPEED or chords changing
+  more often), the sound, AMP ATK, N.LEN and HOLD were not given.
+- The guess does not hold. `dg_tx` writes RSET 0 only into voices DigiGlide controls (`DG.ctl`). With the arp on
+  (not CHRD) the arp's note-ons are not taken (`!dg_arp_single(t)`), `DG.ctl` stays 0 and nothing in the frame is
+  touched. Measured (experiments/arp_level.py, the OS's frames into the SHARC emulator): the record's RSET word
+  at every arp note-on is the sound's own (256), and every arp note's 146-byte voice record is byte for byte the
+  record of a stock arp playing the same notes (stock OS, the chord's notes put into the arp's set 0x40599728
+  from outside), at the same blocks, on the same voices when both reserve 5.
+- Arp bytes found on the way (1.12 sound): SPEED +352 (13 = a note every 187 blocks at 120 BPM, 1/16; 10 = 300;
+  16 = 125; 19 = 62), N.LEN +354 (14 = 100 blocks, 17 = 118). +357 = 2 leaves 2 notes in 1500 blocks (ARP
+  LENGTH, probably). A trig's note end takes its note out of the set; a new trig does not clear it.
+- Levels, mean RMS per note, track 1's demo sound, arp UP, N.LEN 14 (100 blocks):
+
+  | AMP ATK | RSET | one chord a bar, SPEED 10 | SPEED 19 | a chord every 4 steps, SPEED 10 | SPEED 19 |
+  |---|---|---|---|---|---|
+  | 15 (the sound's) | on (the sound's) | -33.5 dB | -30.6 dB | -33.1 dB | -29.4 dB |
+  | 90 | on | -52.1 dB | -49.0 dB | -52.2 dB | -48.0 dB |
+  | 90 | off | -50.9 dB | -38.0 dB | -51.4 dB | -42.1 dB |
+
+  DigiGlide against stock at ATK 15: within 0.3 dB with 5 against 4 reserved voices, 0.00 dB with 5 against 5.
+  (Setting sound slot 81 from the harness does not reach the frame; ATK 90 and RSET were written into the voice
+  records of the frames, the same for any image.)
+- So: a slow attack and a 60 ms arp note is about 19 dB quieter than a fast attack, on stock just the same; that
+  is the quiet arp. Faster SPEED is not quieter in itself. And RSET works the other way round from the guess:
+  RSET off lets a reused voice rise from its level, so a fast arp on a slow attack builds up 11 dB (a slow one
+  1 dB); RSET on restarts every note from silence. A chord change does nothing to sounding notes: the arp
+  restarts on the new trig (first note at the trig), old notes end by their N.LEN, velocity and level words as
+  stock.
+- No firmware change, no new image. The owner's point 2 (the sound's own RSET for arp notes) is what image 18
+  does. Open for the owner: force RSET off on the arp's notes of a DigiGlide track too (louder fast arps on
+  pads, but no longer stock's level).
+- Test: `mod/tests/test_b18_arp_level.py` (8 checks: SPEED 10 and 19, a chord every 4 steps; same notes and
+  blocks as stock, voice records equal, every note within 1 dB).
+- Not done: the unit's own case (sound and settings unknown), SPEED above 19, modes other than UP.
