@@ -1017,6 +1017,7 @@ static void fire_event(void)
 }
 
 int dg_arp_single(uint32_t t);
+static void arp_tick(uint32_t playing, uint32_t stop_edge);
 
 void dg_tx(void)
 {
@@ -1111,6 +1112,7 @@ void dg_tx(void)
 
     playing = PLAY_FLAG == 1;
     stop = key_held(CODE_STOP);
+    arp_tick(playing, stop && !DG.stop_was);            /* a chord HOLD keeps in the arp */
     if (playing)                                        /* the sequencer stopped: only after 0.2 s of "not playing" */
         DG.play_was = 300;
     else if (DG.play_was && !--DG.play_was && DG.latched)
@@ -1255,6 +1257,8 @@ typedef int32_t (*arp_in_fn)(uint32_t, uint8_t *, uint8_t *, int32_t, uint32_t, 
 #define ARP_KEYS 4
 static struct { uint8_t root, n, note[7]; } arp_key[16][ARP_KEYS];   /* per track: the keys down and what they added */
 uint32_t dg_arp_ins, dg_arp_outs;                       /* chords given to the arp, keys taken out (tests) */
+uint16_t dg_arp_latches;                                /* bit t: HOLD keeps track t's chord in the arp */
+static uint16_t arp_play_was;
 uint8_t dg_arp_last[8];                                 /* the notes last given: count, then the notes (tests) */
 
 int dg_arp_single(uint32_t t)                           /* the arp plays this DigiGlide track's chord note by note */
@@ -1264,6 +1268,46 @@ int dg_arp_single(uint32_t t)                           /* the arp plays this Di
         return 0;
     m = sound_of(t)[ARP_MODE];
     return m && m != ARP_CHRD && dg_vcnt_on(dg_par(t, K_VCNT));
+}
+
+/* HOLD and the arp. Stock gives every note in the arp's set the length of its trig and takes it out again when
+ * that runs out ("note out" from the expiry list, 0x4002a072, in the audio interrupt like everything here): the arp
+ * plays only while the trig lasts, and a live-recorded trig of a step or two gives a note or two. With HOLD on a
+ * DigiGlide track, the chord goes in with length INF (127: stock keeps no expiry for it) and stays until the next
+ * chord replaces it; dg_tx lets it go as it does a held chord: [STOP], the sequencer stopping, a mute, HOLD or
+ * VCNT or the arp switched off. */
+#define ARP_SET ((volatile uint32_t *)OSA_40598728)     /* the arp's notes: 128 bits a track */
+#define LEN_INF 127
+
+static int arp_has(uint32_t t, uint32_t note)
+{
+    return (ARP_SET[4 * t + (note >> 5)] >> (note & 31)) & 1;
+}
+
+static void arp_drop(uint32_t t)                        /* all DigiGlide gave the arp on this track leaves it */
+{
+    uint32_t k, i;
+    for (k = 0; k < ARP_KEYS; k++) {
+        for (i = 0; i < arp_key[t][k].n; i++)
+            ARP_OUT(t, arp_key[t][k].note[i]);
+        arp_key[t][k].n = 0;
+    }
+    dg_arp_latches &= (uint16_t)~(1u << t);
+}
+
+static void arp_tick(uint32_t playing, uint32_t stop_edge)
+{
+    uint32_t t, gone = 0;
+    if (playing)                                        /* the sequencer stopped: after 0.2 s, as for a held chord */
+        arp_play_was = 300;
+    else if (arp_play_was && !--arp_play_was)
+        gone = 1;
+    if (!dg_arp_latches)
+        return;
+    for (t = 0; t < 16; t++)
+        if (((dg_arp_latches >> t) & 1) && (gone || stop_edge || dg_par(t, K_HOLD) != HOLD_ON || !dg_arp_single(t) ||
+                                            ((MUTE_MASK >> t) & 1)))
+            arp_drop(t);
 }
 
 static uint32_t arp_chord(uint32_t t, uint32_t root, uint8_t *out)
@@ -1309,10 +1353,30 @@ int32_t dg_arp_in(uint32_t t, uint8_t *rec, uint8_t *base, int32_t next, uint32_
                   uint32_t tick, uint8_t *snd, uint32_t *is_on, uint32_t *restarted)
 {
     uint8_t one[8], nt[7];
-    uint32_t i, n, k, slot = 0;
+    uint32_t i, n, k, slot = 0, hold;
     int32_t r = 0;
     if (!rec || !snd || !snd[ARP_MODE] || !dg_arp_single(t))
         return ARP_IN(t, rec, base, next, deflen, tbase, tick, snd, is_on, restarted);
+    for (k = 0; k < ARP_KEYS; k++) {                    /* a key whose notes stock took out itself (the trig's length */
+        int any = 0;                                    /* ran out, all notes off) is no longer down */
+        for (i = 0; i < arp_key[t][k].n; i++)
+            any |= arp_has(t, arp_key[t][k].note[i]);
+        if (!any)
+            arp_key[t][k].n = 0;
+    }
+    hold = dg_par(t, K_HOLD) == HOLD_ON && !((MUTE_MASK >> t) & 1);
+    if (hold) {                                         /* HOLD: this chord replaces the one the arp was kept on */
+        int by_hand = !(PLAY_FLAG == 1 && !(KEYS_HELD[3] | KEYS_HELD[4])), same = 0;   /* (as dg_tx's ev_seq) */
+        for (k = 0; k < ARP_KEYS; k++)
+            same |= arp_key[t][k].n && arp_key[t][k].root == rec[2];
+        same = same && ((dg_arp_latches >> t) & 1);
+        arp_drop(t);
+        if (by_hand && same) {                          /* played by hand, the held chord's key again lets it go */
+            if (is_on)
+                *is_on = 1;                             /* (the arp has the note: it is not played as a note) */
+            return 0;
+        }
+    }
     n = arp_chord(t, rec[2], nt);
     for (k = 0; k < ARP_KEYS; k++)                      /* this key's entry, or a free one, or the first */
         if (arp_key[t][k].n && arp_key[t][k].root == rec[2])
@@ -1328,6 +1392,8 @@ int32_t dg_arp_in(uint32_t t, uint8_t *rec, uint8_t *base, int32_t next, uint32_
         for (k = 0; k < 6; k++)
             one[k] = rec[k];
         one[2] = nt[i];
+        if (hold)
+            one[4] = LEN_INF;
         arp_key[t][slot].note[i] = nt[i];
         dg_arp_last[1 + i] = nt[i];
         {   /* (stock returns the arp's run id from the call that starts it, 0 from one that only adds a note) */
@@ -1336,6 +1402,8 @@ int32_t dg_arp_in(uint32_t t, uint8_t *rec, uint8_t *base, int32_t next, uint32_
                 r = x;
         }
     }
+    if (hold)
+        dg_arp_latches |= (uint16_t)(1u << t);
     dg_arp_ins++;
     return r;
 }
@@ -1351,6 +1419,8 @@ int32_t dg_arp_out(uint32_t t, uint32_t note)
             break;
     if (k == ARP_KEYS)
         return ARP_OUT(t, note);
+    if ((dg_arp_latches >> t) & 1)                      /* HOLD keeps the chord after its key is up */
+        return 0;
     for (i = 0; i < arp_key[t][k].n; i++) {             /* its notes, but not one another key still holds */
         int kept = 0;
         for (j = 0; j < ARP_KEYS; j++)

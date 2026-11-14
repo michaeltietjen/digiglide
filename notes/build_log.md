@@ -858,3 +858,47 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
 - Test: `mod/tests/test_b18_arp_level.py` (8 checks: SPEED 10 and 19, a chord every 4 steps; same notes and
   blocks as stock, voice records equal, every note within 1 dB).
 - Not done: the unit's own case (sound and settings unknown), SPEED above 19, modes other than UP.
+
+## Image 18 on the unit: the arp "only plays the first chord and then ducks out" (2026-11-14)
+
+- Owner, image 18, patterns 1 and 2: "the arp only plays a few notes", "it only plays the first chord and then
+  ducks out". Read from the unit while it played (`tools/dgarp.py`, PEEK only): panel track 13, HOLD on, 6
+  voices, arp MODE TRUE, SPEED 7; trigs on steps 1, 17, 25, 33, 49, 57, the first about 14 steps long, the
+  others 1 to 2. Every trig gives the arp its chord (three notes: TYPE 0, EXT 0 is a triad), and the set is
+  empty again when the trig ends. Pattern 1 itself was not watched.
+- Cause, in the emulator (`experiments/arp_hold_trace.py`, a write hook on the set 0x40599728): stock's "notes
+  in" (0x40029CD4) gives each note an expiry, tbase + 2 * table[length] with the length from the note record's
+  byte 4 (the trig's; the default length if bit 7 is set), in a list sorted by time (head 0x405994A4, entries of
+  16 bytes at 0x405914A4 + 16 * (128 * track + note), a bit a note at 0x405913A4). 0x4002A072(now), called at
+  0x40026108 when the head is due, calls "note out" for each expired note. A length above 126 (INF) gets no
+  expiry. So the arp plays while the trig lasts: a trig 6 long at SPEED 13 gives one note. HOLD had no part in
+  it. (A first guess, the clear at 0x40027CE6 in 0x40027C60, was wrong: that routine is not called at a trig's
+  end.) Argument 7 of "notes in" is a source level kept at state + 36, not a tick: a higher level clears the set
+  and takes over, the same level adds. Sequenced trigs add; only their lengths take notes out.
+- The whole of this (sequencer, "notes in", the expiry, the frame hook dg_stub) is one function, the audio
+  interrupt 0x40025E36, so dg_tx may call "note out" itself.
+- Change (branch `arp-hold`, from build 18's source; build 19 was in work in the main checkout at the time):
+  - `dg_arp_in`, HOLD on (and the track not muted): what DigiGlide gave the arp before is taken out, the new
+    chord goes in with length INF, the track is marked in `dg_arp_latches`. Played by hand (as dg_tx's ev_seq
+    tells it), the held chord's key again only takes it out.
+  - `dg_arp_out` (a key's release): nothing while the track's chord is held.
+  - `arp_tick` in dg_tx, every block: a held chord is taken out on [STOP], 0.2 s after the sequencer stops, on a
+    mute, and when HOLD, VCNT or the arp (or MODE CHRD) no longer hold: the rules of a held chord.
+  - Also: `arp_key` entries were never freed for sequenced trigs (the expiry does not come through
+    `dg_arp_out`); "notes in" now drops an entry none of whose notes is still in the set.
+  - New address: the arp's set, 1.11 0x40598728 -> 1.12 0x40599728 (addrmap.py, 20 / 20 references).
+  - `build_dg.py`: DG_GEN names the generated-sources directory, so two checkouts can build at once.
+- Test image `~/dn2-workspace/build/arphold/DN2_1.12_DIGIGLIDE_18H.syx` (build 18 + this; preflight PASS; kept
+  out of the numbered images; not flashed). `mod/tests/test_arp_hold.py`, 17 checks: HOLD on, trigs 6 long on
+  steps 1 and 9: C Eb G Bb twice round, then D F A C from step 9, no chord event, [STOP] empties the set; HOLD
+  off: one note a trig, as image 18; HOLD off, arp off and a mute each let a held chord go; by hand: the chord
+  stays after the key's "note out", another key replaces it, the same key lets it go, [STOP] lets it go.
+- Not done: the unit. The emulated panel takes no second key, so the by-hand cases after the first key are
+  calls of the hooked routines. A trig with several notes still gives the arp the first note's chord only
+  (build 18's behaviour). The arp on the track restarts at each new chord, as it does today when the old trig
+  has ended. To merge into the image after 19: `mod/digiglide.c` (the arp section and one line in dg_tx),
+  `mod/build_dg.py` (two lines), `port/addr_1.12.json`.
+- Regression on the test image, all pass: test_arp_hold 17, test_b18_arp 12, test_b18_arp_level 8,
+  test_b17_locks 20, test_every_machine 30, test_off_is_stock 6, test_probe 13, test_rev5 36,
+  test_rev5_record 14, test_rev5_trigs 6. `isr_cost_dg.py` did not run (stale since rev 5, as noted above), so
+  the cost of `arp_tick` (one test of `dg_arp_latches` a block when no chord is held) is not measured.

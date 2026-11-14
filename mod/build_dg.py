@@ -117,7 +117,7 @@ if not out:
 defs = dict(d[2:].split('=', 1) for d in osver.defines())
 defs.update(dict(d.split('=', 1) for d in a.D))
 defs.setdefault('DG_BUILD', os.path.basename(out)[:-4].rsplit('_', 1)[-1])    # the status box and the probe's tag
-gen = P.BUILD / 'digiglide_gen'
+gen = P.BUILD / os.environ.get('DG_GEN', 'digiglide_gen')    # (DG_GEN: a second checkout building at the same time)
 gen.mkdir(exist_ok=True)
 port_os.apply(gen)
 stock = cfmod.section(osver.STOCK_SYX, 3)
@@ -130,6 +130,7 @@ if not a.no_ui:
     gen_ptable(stock, gen / 'ptable.S')
     srcs += ['ui/dg_ui.c', 'ui/hooks_ui.S', str(gen / 'ptable.S')]
     entries += ['dg_count_stub', 'dg_page_stub', 'dg_row_stub', 'dg_syn_stub', 'dg_row', 'dg_on_mask', 'dg_pass_stub', 'dg_ui_page', 'dg_ui_first', 'dg_ui_locks', 'dg_ptable', 'dg_pt_b16', 'dg_pt_b40']
+entries += ['dg_arp_latches']
 m = cfmod.Mod([s if os.path.isabs(s) else os.path.join(HERE, s) for s in srcs], entries=entries, init='dg_mod_init',
               include=[HERE, os.path.join(HERE, 'core')], defines=defs, stock=osver.STOCK_SYX)
 ISR_MOVE = '2039' + f'{A(0x402876F8):08x}'          # move.l <ISR counter>,%d0
