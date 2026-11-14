@@ -434,6 +434,22 @@
   "0x405CD96C": {
    "to": "0x405CE96C",
    "how": "ram (working project image; dnfw 1.11 0x405cd85c + 0x110, 1.12 from naturarum/dn2-cfw T6.0, read on the unit)"
+  },
+  "0x40055BC4": {
+   "to": "0x40055BC4",
+   "how": "image"
+  },
+  "0x446478C8": {
+   "to": "0x446488C8",
+   "how": "ram (1677/1678 references agree)"
+  },
+  "0x4004EAA4": {
+   "to": "0x4004EAA4",
+   "how": "image"
+  },
+  "0x4004F944": {
+   "to": "0x4004F944",
+   "how": "image"
   }
  }
 }

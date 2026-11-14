@@ -5,7 +5,7 @@ plays chords with an FM TONE, an FM DRUM or a WAVETONE sound, and a sound load l
      attack block), and not one byte of the track's sound was written.
   B  pages: on an FM TONE track [SYN] reaches CHORD, MOTION and SETUP after FM TONE's own four; knob A on CHORD turns
      TYPE in the store, and the sound and every other byte of the live kit but the buffer word stay as they were;
-     the knob rows cannot be p-locked or randomised.
+     only the six lockable rows can be p-locked (image 17) and no row is randomised.
   C  a sound load (imitated in memory: another name, another machine's values everywhere) on a DigiGlide track: the
      settings are the track's, the next trigs are still chords.
   D  a WAVETONE sound made with image 14 or older (VCNT's code in slot 54, HOLD's mark in slot 94) on a track never
@@ -120,10 +120,11 @@ buf = 0x48e4 + 2 * 70
 check(k.slot(T, 50) == 3 << 8, f'B: knob A on CHORD turns TYPE in the store: {k.slot(T, 50):#06x} (DIM)')
 check(diff and set(diff) <= {buf, buf + 1}, f'B: in the live kit only the buffer word changed (bytes {[hex(x) for x in diff[:6]]}): the FM TONE sound is untouched')
 h.png('fmtone_page_chord_dim.png')
-row = k.call(s.sym['dg_row'], [0]) if 'dg_row' in s.sym else 0
-if row:
-    r = struct.unpack('>17I', bytes(h.r(row, 68)))
-    check(r[0] & 8 and r[9:13] == (0, 0, 0, 0), f'B: the knob row cannot be p-locked (flags {r[0]:#x}) and has no randomiser')
+if 'dg_row' in s.sym:                                    # (image 17: six rows are lockable, test_b17_locks.py)
+    rows = [struct.unpack('>17I', bytes(h.r(k.call(s.sym['dg_row'], [kk]), 68))) for kk in range(18)]
+    lockable = sorted(kk for kk in range(18) if not rows[kk][0] & 8)
+    check(lockable == [0, 1, 3, 4, 5, 12], f'B: only TYPE, EXT, VOIC, POS, GLID and MOVE can be p-locked (rows {lockable})')
+    check(all(r[9:13] == (0, 0, 0, 0) for r in rows), 'B: no knob row has a randomiser')
 msg = lambda: bytes(h.r(s.sym['dg_msg'], 28)).split(b'\0')[0].decode()
 s.syn_page(6)
 mask = k.call(s.sym['dg_on_mask'])

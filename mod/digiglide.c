@@ -250,17 +250,156 @@ uint8_t dg_knob(int32_t raw, uint32_t k)                /* knob << 8 -> the para
     return (uint8_t)v;
 }
 
+/* ---------------------------------------------------------------- p-locks made on the pages (build 17)
+ * Six parameters can be locked per step: POS, TYPE, EXT, VOIC, GLID, MOVE. The sequencer keeps one lane (129 words,
+ * -1 = no lock) per (track, sound slot), from a pool of 80 a pattern. Sound slots 0 and 100 have no parameter on
+ * any machine and a lock there changes no word of the frame the DSP is sent (experiments/b17_lanes_frame.py), so
+ * DigiGlide packs its six into those two lanes: each field is 0 = not locked, else value + 1.
+ *   slot 0:   POS + 129 * (TYPE + 5 * EXT)        (at most 5,804)
+ *   slot 100: VOIC + 129 * (GLID + 14 * MOVE)     (at most 19,865)
+ * Stock does not lock a row whose record is in the FX group (experiments/b17_lockable_row.py), so the lock is
+ * written here, through the stock setter, when a knob of a page turns while a step is held. */
+#define APP_ROOT (*(volatile uint32_t *)OSA_446478D0)
+#define ACTIVE_CTX ((uint32_t (*)(uint32_t))OSA_4003EFDE)            /* (app) -> the active track's sequencer context */
+#define LOCK_SET ((uint32_t (*)(uint32_t, uint32_t, uint32_t, uint32_t))OSA_4004F8FE)  /* ctx, step, slot, value */
+#define HELD_OBJ (*(volatile uint8_t *volatile *)OSA_446478C8)      /* +600: 128 bits, the steps held in GRID REC */
+#define MARK_EDITED ((void (*)(volatile uint8_t *, uint32_t))OSA_40055BC4)   /* as stock's lock path does */
+static const uint8_t LK_SLOT[DG_NP] = {[K_POS] = 0, [K_TYPE] = 0, [K_EXT] = 0, [K_VOIC] = 100, [K_GLID] = 100, [K_MOVE] = 100};
+static const uint16_t LK_DIV[DG_NP] = {[K_POS] = 1, [K_TYPE] = 129, [K_EXT] = 645, [K_VOIC] = 1, [K_GLID] = 129, [K_MOVE] = 1806};
+static const uint8_t LK_MOD[DG_NP] = {[K_POS] = 129, [K_TYPE] = 5, [K_EXT] = 9, [K_VOIC] = 129, [K_GLID] = 14, [K_MOVE] = 11};
+#define LK_TOP(slot) ((slot) ? 19865 : 5804)
+
+static int32_t lane_word(uint32_t t, uint32_t step, uint32_t slot)  /* the packed word, or -1 */
+{
+    volatile uint8_t *pat = PLAYING, *lt;
+    int8_t idx;
+    int32_t v;
+    if (!pat || t >= 16 || step >= 128)
+        return -1;
+    lt = pat + 97872;
+    idx = (int8_t)lt[20640 + 101 * t + slot];
+    if (idx < 0)
+        return -1;
+    v = *(volatile int16_t *)(lt + 2 + 2 * (step + 129 * (uint32_t)idx));
+    return v > LK_TOP(slot) ? -1 : v;
+}
+
+int32_t dg_lock_get(uint32_t t, uint32_t step, uint32_t k)   /* the locked index of parameter k, or -1 */
+{
+    int32_t v, f;
+    if (k >= DG_NP || !LK_DIV[k])
+        return -1;
+    v = lane_word(t, step, LK_SLOT[k]);
+    if (v < 0)
+        return -1;
+    f = (v / LK_DIV[k]) % LK_MOD[k];
+    return f - 1;
+}
+
+int dg_lock_any(uint32_t t, uint32_t step)              /* the step holds a DigiGlide lock */
+{
+    return lane_word(t, step, 0) > 0 || lane_word(t, step, 100) > 0;
+}
+
+/* lock parameter k of the ACTIVE track on a step to index val, or unlock it (val < 0). -> 0 if stock refused (the
+ * pattern's 80 lanes are all in use) */
+int dg_lock_put(uint32_t t, uint32_t step, uint32_t k, int32_t val)
+{
+    int32_t v, f;
+    uint32_t app = APP_ROOT;
+    if (!app || k >= DG_NP || !LK_DIV[k] || step >= 128)
+        return 0;
+    v = lane_word(t, step, LK_SLOT[k]);
+    if (v < 0) {
+        if (val < 0)
+            return 1;
+        v = 0;
+    }
+    f = (v / LK_DIV[k]) % LK_MOD[k];
+    v += ((val < 0 ? 0 : val + 1) - f) * (int32_t)LK_DIV[k];
+    return LOCK_SET(ACTIVE_CTX(app), step, LK_SLOT[k], v ? (uint32_t)v : 0xFFFFu) & 0xFF;
+}
+
+/* The stock lock path, hooked (ui/hooks_ui.S). With a step held in GRID RECORDING, a knob of a lockable row makes
+ * stock call the track context's "get lock" (0x4004eaa4: ctx, step, slot), "set lock" (0x4004f8fe: ctx, step, slot,
+ * value) and, for a knob push on a locked step, "remove lock" (0x4004f944: ctx, step, slot), with the record's k as
+ * the slot: for DigiGlide's records that is 70..87, the sound's filter envelope. All three are taken here when the
+ * slot is one of the six rows', a DigiGlide page is on screen and the context is the active track's: the lock goes
+ * to the packed lanes and nothing is filed under 70..87. Everything else is stock's (notes/build_log.md, Build 17). */
+int dg_ui_on_page(void);
+#define NOT_OURS 0x7FFFFFFF
+static int lock_ours(uint32_t ctx, uint32_t slot, uint32_t *t)
+{
+    uint32_t app = APP_ROOT, k = slot - BUF_K0;
+    if (!app || slot < BUF_K0 || k >= DG_NP || !LK_DIV[k] || !dg_ui_on_page() || ctx != ACTIVE_CTX(app))
+        return 0;
+    *t = *(volatile uint32_t *)(ctx + 60);
+    return *t < 16 && dg_synth(*t);
+}
+
+/* Stock's knob path with a step held (0x40067856 -> 0x40064d08): no lock yet = "set lock" at the row's value, else
+ * "get lock", add the knob's delta in 1/256 steps, "set lock". A lock holds whole steps, so the part of a step the
+ * knob has moved is kept here for the lock last written, and given back by the next "get". */
+static struct { uint32_t key; uint8_t frac; } lk_part;
+
+int32_t dg_lock_set_hook(uint32_t ctx, uint32_t step, uint32_t slot, uint32_t value)
+{
+    uint32_t t, k = slot - BUF_K0;
+    int32_t v = (int32_t)(value & 0xFFFF) >> 8;
+    if (!lock_ours(ctx, slot, &t))
+        return NOT_OURS;
+    if ((value & 0xFFFF) == 0xFFFF) {
+        lk_part.key = 0;
+        return dg_lock_put(t, step, k, -1);
+    }
+    lk_part.key = 1u << 31 | t << 16 | step << 8 | k;
+    lk_part.frac = (uint8_t)value;
+    if (v > PMAX[k]) {
+        v = PMAX[k];
+        lk_part.frac = 0;
+    }
+    return dg_lock_put(t, step, k, v);
+}
+
+int32_t dg_lock_clr_hook(uint32_t ctx, uint32_t step, uint32_t slot)
+{
+    uint32_t t;
+    if (!lock_ours(ctx, slot, &t))
+        return NOT_OURS;
+    lk_part.key = 0;
+    return dg_lock_put(t, step, slot - BUF_K0, -1);
+}
+
+int32_t dg_lock_get_hook(uint32_t ctx, uint32_t step, uint32_t slot)
+{
+    uint32_t t;
+    int32_t lk;
+    if (!lock_ours(ctx, slot, &t))
+        return NOT_OURS;
+    lk = dg_lock_get(t, step, slot - BUF_K0);
+    if (lk < 0)
+        return -1;
+    return lk << 8 | (lk_part.key == (1u << 31 | t << 16 | step << 8 | (slot - BUF_K0)) ? lk_part.frac : 0);
+}
+
 /* Parameter k for a trig on (track, step): a p-lock, else the track's value.
  * P-locks are the sequencer's: it keeps one lane per (track, sound slot). Up to image 14 the parameters were sound
  * slots of a WAVETONE sound, so the locks made then sit in the lanes of slots 50..64, 93, 94, and WAVETONE's DSP
  * ignores those slots. They are still honoured, on a WAVETONE track that has DigiGlide settings: patterns made with
  * images <= 14 play their locked chord changes as before. A lock value that is not a value of the parameter is not a
  * DigiGlide lock (FM TONE's own locks stay in those lanes when a track's machine is changed) and is skipped.
- * This build cannot MAKE a lock: the pages' knobs are not sound slots any more (see dg_ui_sync). */
+ * Since image 17 six parameters are locked in the packed lanes of slots 0 and 100 (dg_lock_get); those come first. */
 static int32_t par_at(uint32_t t, uint32_t step, uint32_t k, int *locked)
 {
     volatile uint8_t *pat = PLAYING;
     *locked = 0;
+    {
+        int32_t lk = dg_lock_get(t, step, k);          /* build 17: a lock made on the pages */
+        if (lk >= 0 && lk <= PMAX[k]) {
+            *locked = 1;
+            return lk << 8;
+        }
+    }
     if (pat && step < 128 && k != K_PLAY && dg_mach(t) == 1 && dg_marked(t)) {
         volatile uint8_t *lt = pat + 97872;
         int8_t idx = (int8_t)lt[20640 + 101 * t + UISLOT[k]];
@@ -516,29 +655,62 @@ static uint16_t b_shadow[DG_NP];
 static const uint8_t PMIN[DG_NP] = {0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static const uint8_t PTOP[DG_NP] = {3, 7, 24, 127, 127, 12, 0, 3, 9, 4, 4, 6, 9, 50, 50, 127, 4, 6};
 
+/* the step the pages show and edit: the first step held in GRID RECORDING, or -1 (the track's own values) */
+int32_t dg_view_step = -1;
+uint32_t dg_view_locks;                                 /* bit k: parameter k is locked on that step (drawn inverted) */
+int dg_ui_shown_page(void);
+
+static int32_t held_step(volatile uint32_t **bits)
+{
+    volatile uint8_t *o = HELD_OBJ;
+    uint32_t i;
+    *bits = 0;
+    if (!o)
+        return -1;
+    *bits = (volatile uint32_t *)(o + 600);
+    for (i = 0; i < 128; i++)
+        if (((*bits)[i >> 5] >> (i & 31)) & 1)
+            return (int32_t)i;
+    return -1;
+}
+
+int32_t dg_view(uint32_t t, uint32_t k)                 /* what the page shows for parameter k: the held step's lock, */
+{                                                       /* else the track's value */
+    int32_t lk = dg_view_step >= 0 ? dg_lock_get(t, (uint32_t)dg_view_step, k) : -1;
+    return lk >= 0 ? lk << 8 : dg_par(t, k);
+}
+
 void dg_ui_sync(uint32_t t)
 {
     uint8_t *kit = SOUNDS;
-    uint32_t k, fresh;
+    volatile uint32_t *bits = 0;
+    uint32_t k, fresh, locks = 0;
+    int32_t hs;
     if (!kit || t >= 16)
         return;
-    fresh = kit != b_kit || t != b_trk;
+    hs = dg_synth(t) ? held_step(&bits) : -1;
+    fresh = kit != b_kit || t != b_trk || hs != dg_view_step;
     b_kit = kit;
     b_trk = t;
+    dg_view_step = hs;
     for (k = 0; k < DG_NP; k++) {
         volatile uint8_t *w = kit + FXBUF + 2 * (BUF_K0 + k);
-        uint16_t buf = (uint16_t)(w[0] << 8 | w[1]), st = (uint16_t)dg_par(t, k);
+        uint16_t buf = (uint16_t)(w[0] << 8 | w[1]), st;
         if (!fresh && buf != b_shadow[k] && !(buf & 0xFF) && (buf >> 8) >= PMIN[k] && (buf >> 8) <= PTOP[k]
             && dg_synth(t)) {
-            dg_par_set(t, k, buf);                      /* a knob */
-            st = (uint16_t)dg_par(t, k);
+            if (hs < 0)                                 /* (with a step held stock sends the knob to its lock */
+                dg_par_set(t, k, buf);                  /* path: dg_lock_set_hook) */
         }
+        st = (uint16_t)dg_view(t, k);
+        if (hs >= 0 && dg_lock_get(t, (uint32_t)hs, k) >= 0)
+            locks |= 1u << k;
         if (buf != st) {
             w[0] = (uint8_t)(st >> 8);
             w[1] = (uint8_t)st;
         }
         b_shadow[k] = st;
     }
+    dg_view_locks = locks;
 }
 
 static void voices_tick(void)
@@ -993,6 +1165,12 @@ void dg_tx(void)
             if (sc != T.p.scrb) {                       /* SCRB follows the knob (or this trig's lock) live */
                 T.p.scrb = (uint8_t)sc;
                 dg_set_scrb(&T, sc);
+            }
+            /* the sequencer reaches a step that holds a lock and no trig of this track's fires on it (a lock
+             * under a held chord): the chord takes the step's values now */
+            if (playing && PLAYHEAD[tr] != DG.last_step && dg_lock_any(tr, PLAYHEAD[tr])) {
+                DG.last_step = PLAYHEAD[tr];
+                DG.rev_block = DG.blocks - 30;
             }
             if ((DG.gate_open || DG.latched) && DG.blocks - DG.rev_block >= 30) {
                 DG.rev_block = DG.blocks;               /* a chord setting was turned (TYPE EXT KEY VOIC POS BASS */

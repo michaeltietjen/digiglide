@@ -679,14 +679,62 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   held step; the inverted display.
 - Owner's choice (2026-11-13): the six lockable parameters are POS, TYPE, EXT (lane 0) and VOIC, GLID, MOVE
   (lane 100).
-- Leaving the rows lockable is not enough (`experiments/b17_lockable_row.py`, test image 95 = image 16 built with
-  `-D DG_LOCKABLE=0x103B`, which skips the "unlockable" flag on those six rows; FM TONE track, CHORD page, grid
-  recording, trig 1 held, knob E turned): the header shows the held-step symbol, but stock writes the value (POS
-  64 -> 100 in the store), calls the lock setter 0 times and makes no lane. So stock does not lock a row whose
-  record is in the FX group, whatever its flags; DigiGlide has to write the lock itself when a step is held.
+- CORRECTED (see Build 17 below): an earlier entry here said that with the six rows left lockable stock "writes
+  the value (POS 64 -> 100)" with a step held and never calls the lock setter, "so stock does not lock a row whose
+  record is in the FX group". That was wrong. In that run (`experiments/b17_lockable_row.py`, test image 95) the
+  knob change landed before the hold registered. With a step truly held stock does not write the value: it goes
+  to its lock routines with the record's k as the slot.
 - Looking for stock's "a step is held" state (`experiments/b17_held_state.py`): not in the app object (451,596
   bytes compared across idle, grid recording, trig 1 held, trig 5 held: nothing follows the keys). A compare of
   all working RAM (0x40300000..0x44700000) gives 680 bytes that follow the held trig, mostly draw buffers, not
   sorted yet, and no byte that follows grid recording on / off (the [RECORD] tap may not have landed in that run).
 - Emulator note: a script must import dgkit before cfkit. dgkit's osver sets the 1.12 main image for the
   emulator's symbols; with cfkit first the panel keys go nowhere (no track select, [SYN] does not cycle).
+
+
+## Build 17 (2026-11-13): p-locks made on the pages
+
+- What it does: in GRID RECORDING, hold a trig and turn POS, TYPE, EXT, VOIC, GLID or MOVE: that step gets its own
+  value (a p-lock), the track's value stays. While the step is held the page shows the step's values and a locked
+  one is drawn inverted. Push the knob with the step held: a locked parameter is unlocked; an unlocked one is
+  locked at the row's value. A lock on a step without a note trig is taken by the chord that is sounding when the
+  playhead reaches the step.
+- Storage: two stock lock lanes per DigiGlide track, sound slots 0 and 100 (no machine uses them, nothing of them
+  reaches the DSP). Field 0 = not locked, else value + 1. Slot 0: POS + 129 * (TYPE + 5 * EXT). Slot 100: VOIC +
+  129 * (GLID + 14 * MOVE). The setter takes any 15-bit value; value 0xFFFF writes "no lock".
+- How stock locks (read from 1.12 and traced, `experiments/b17_held_knob_trace.py`). The held steps are a 128-bit
+  set in an object behind the pointer at 0x446488C8 (+600). The knob handler 0x40067470 gets the knob's delta
+  from the accelerator 0x4011364e, in 1/256 steps; with a step held it calls the page's method at vtable +0x9c
+  (0x40065022), which runs 0x40064d08 for every held step: no lock yet = "set lock" (0x4004F8FE: ctx, step, slot,
+  value) at the row's value; else "get lock" (0x4004EAA4), add the delta, "set lock". A knob push runs 0x40064dc6
+  (lock at the row's value where there is none) and, if every held step had the lock, 0x400647d4, which ends in
+  "remove lock" (0x4004F944: ctx, step, slot). The slot stock uses is the record's k: 70..87 for DigiGlide's
+  records, which are the sound's filter envelope.
+- So the six rows stay lockable (`DG_LOCK_ROWS` in `mod/ui/dg_ui.c`; the other rows keep the unlockable flag) and
+  the three stock routines are hooked (`mod/ui/hooks_ui.S`, `dg_lock_set_hook`, `dg_lock_get_hook`,
+  `dg_lock_clr_hook` in `mod/digiglide.c`). A call is DigiGlide's when the slot is one of the six rows', a
+  DigiGlide page is on screen and the context is the active track's; then the lock goes to the packed lanes and
+  nothing is filed under 70..87. Every other call is stock's, untouched. A lock holds whole steps, so the part of
+  a step the knob has moved is kept for the lock last written and given back by the next "get lock".
+- First try, removed: DigiGlide's own "knob pushed = unlock" in `dg_ui_sync`. It cleared the lock stock had just
+  made (stock's push makes the lock first), which is why the lock seemed to stay at the starting value.
+- Emulator limit: with a step held the emulated panel's knob never produces a delta (the accelerator returns 0,
+  knob pushed or not), so the emulator alone never reaches the turn path. The test replaces the accelerator's
+  result at 0x400675c8 with 0x100 (and 0x80 for the half-step check); everything after that is stock's code. The
+  size of a real detent's delta is not measured: whole steps and half steps both work.
+- Test (`mod/tests/test_b17_locks.py`): 20 checks pass. POS locked on step 1 and following
+  the knob (67, lane word 68), half steps add up (67 -> 69), the track's POS unchanged, the page shows the lock
+  (`renders/b17/chord_pos_locked_held.png`: the POS cell inverted), push removes it, push again locks 64, the page
+  shows the track again after the key is let go, no lane under 70..87; locks written directly are read by their
+  trigs at playback; the step without a trig is taken while the chord sounds; unlocking the last field of a word
+  writes "no lock".
+- Not tested: what a machine change, a track copy, a pattern copy and a trig removal do to lanes 0 and 100 (they
+  are stock lanes, so stock's own routines are expected to carry and clear them); locks made while another
+  track's page is on screen (not possible from the panel); the unit itself.
+- Playback does not use the hooked routines (pattern with locks playing, CHORD on screen: 0 calls of "get lock",
+  "set lock" and "remove lock"), so a DigiGlide lock is never read as a lock of slots 70..87.
+- Image 17: `DN2_1.12_DIGIGLIDE_17.syx`, sha256
+  `6acaed6dd94c76b3133627202dedcf13cb6168cb3cd587ff4987bc9fae198b04`, preflight PASS, the same bytes from a
+  second build of the committed source. On it: test_b17_locks 20, test_rev5 36, test_every_machine 30 (its check
+  "no row can be p-locked" rewritten: only the six rows, no row randomised), test_rev5_record 14, test_probe 13,
+  test_rev5_trigs 6, test_off_is_stock 6, make_brickglide_pad 4: all pass. Not flashed by me; not yet on the unit.

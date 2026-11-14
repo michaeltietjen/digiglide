@@ -114,3 +114,62 @@ dg_pass_stub:
     clr.b   %d0
     move.b  %d0,32(%a2)
     rts
+
+/* 0x4004f8fe, the track context's "set lock" (ctx, step, slot, value): jsr here over `move.l %a2,-(%sp) ;
+ * move.l %d2,-(%sp) ; movea.l 12(%sp),%a2` (8 bytes; + nop). Stack: our return, the caller's return, ctx, step,
+ * slot, value. dg_lock_set_hook takes a DigiGlide row's lock (-> its result, straight back to the caller) or
+ * returns 0x7fffffff: then the displaced instructions run under our return address. */
+    .globl  dg_lockset_stub
+dg_lockset_stub:
+    move.l  20(%sp),-(%sp)
+    move.l  20(%sp),-(%sp)
+    move.l  20(%sp),-(%sp)
+    move.l  20(%sp),-(%sp)
+    jsr     dg_lock_set_hook
+    lea     16(%sp),%sp
+    cmpi.l  #0x7fffffff,%d0
+    beq.s   1f
+    addq.l  #4,%sp
+    rts
+1:  move.l  (%sp)+,%a0
+    move.l  %a2,-(%sp)
+    move.l  %d2,-(%sp)
+    movea.l 12(%sp),%a2
+    jmp     (%a0)
+
+/* 0x4004f944, the track context's "remove lock" (ctx, step, slot): what a knob pushed with a step held ends in when
+ * the step has the lock (0x400647d4 -> 0x40038018). The same first instructions as "set lock". */
+    .globl  dg_lockclr_stub
+dg_lockclr_stub:
+    move.l  16(%sp),-(%sp)
+    move.l  16(%sp),-(%sp)
+    move.l  16(%sp),-(%sp)
+    jsr     dg_lock_clr_hook
+    lea     12(%sp),%sp
+    cmpi.l  #0x7fffffff,%d0
+    beq.s   1f
+    addq.l  #4,%sp
+    rts
+1:  move.l  (%sp)+,%a0
+    move.l  %a2,-(%sp)
+    move.l  %d2,-(%sp)
+    movea.l 12(%sp),%a2
+    jmp     (%a0)
+
+/* 0x4004eaa4, the track context's "get lock" (ctx, step, slot) -> value or -1: jsr here over `movea.l 4(%sp),%a0 ;
+ * move.l 44(%a0),%d0` (8 bytes; + nop). Stack: our return, the caller's return, ctx, step, slot. */
+    .globl  dg_lockget_stub
+dg_lockget_stub:
+    move.l  16(%sp),-(%sp)
+    move.l  16(%sp),-(%sp)
+    move.l  16(%sp),-(%sp)
+    jsr     dg_lock_get_hook
+    lea     12(%sp),%sp
+    cmpi.l  #0x7fffffff,%d0
+    beq.s   1f
+    addq.l  #4,%sp
+    rts
+1:  move.l  (%sp)+,%a1
+    movea.l 4(%sp),%a0
+    move.l  44(%a0),%d0
+    jmp     (%a1)

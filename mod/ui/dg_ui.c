@@ -43,6 +43,7 @@ int dg_ui_active(uint32_t type)
  * filter envelope (naturarum/dn2-cfw docs/parameter-table-growth.md 5.1, rule 5). Row: +0 flags (a lock needs bits 0
  * and 3 clear), +0x24 the randomiser's std::function (16 bytes; 61 stock rows have none). Rebuilt on every call:
  * the stock rows are built at boot, after the first readers run. */
+#define DG_LOCK_ROWS 0x103Bu                             /* TYPE EXT VOIC POS GLID MOVE */
 extern const uint32_t dg_rows[];
 static uint32_t rowbuf[18][17];
 uint32_t dg_row(uint32_t k)
@@ -51,10 +52,11 @@ uint32_t dg_row(uint32_t k)
     uint32_t *d = rowbuf[k], i;
     for (i = 0; i < 17; i++)
         d[i] = s[i];
-#ifdef DG_LOCKABLE                                      /* experiment (build 17): leave six rows lockable */
-    if (!((DG_LOCKABLE >> k) & 1))
-#endif
-    d[0] |= 8;
+    /* the six parameters DigiGlide can lock per step (digiglide.c, build 17) keep the row lockable: with a step
+     * held, stock sends the knob of a lockable row to its lock routines (hooked: dg_lock_set_hook and its
+     * neighbours) and ignores the knob of an unlockable one. */
+    if (!((DG_LOCK_ROWS >> k) & 1))
+        d[0] |= 8;
     d[9] = d[10] = d[11] = d[12] = 0;
     return (uint32_t)d;
 }
@@ -175,7 +177,9 @@ static const char *const LABEL[NP] = {"TYPE", "EXT", "KEY", "VOIC", "POS", "GLID
 #define VALUE_Y_BOT 12
 #define LABEL_Y_BOT 2
 
-uint32_t dg_ui_locks;                                   /* always 0 since rev 6 (the pages show no locks); tests read it */
+uint32_t dg_ui_locks;                                   /* the lock bits last drawn (tests read it) */
+extern uint32_t dg_view_locks;
+int32_t dg_view(uint32_t t, uint32_t k);
 
 /* bit t: DigiGlide is on on track t + 1 (SETUP shows it; tests) */
 uint32_t dg_on_mask(void)
@@ -196,11 +200,13 @@ static void draw_page(void *view, void *canvas, uint32_t track, int dg_page, int
         char buf[12];
         if (k >= NP)
             continue;                                   /* SETUP's empty cells */
-        FMT[k](dg_par(track, (uint32_t)k), buf);
+        FMT[k](dg_view(track, (uint32_t)k), buf);
         TEXT(canvas, FONT, cx, vy, CENTRED, "%.4s", buf);
+        if ((dg_view_locks >> k) & 1)                   /* locked on the held step: inverted, as stock */
+            FILL(canvas, cx - 12, vy - 1, cx + 11, vy + 7, -1);
         TEXT(canvas, FONT, cx, ly, CENTRED, "%s", LABEL[k]);
     }
-    dg_ui_locks = 0;
+    dg_ui_locks = dg_view_locks;
     if (dg_page == 2) {                                 /* SETUP's lower row: which tracks have DigiGlide on, 1..16 */
         uint32_t m = dg_on_mask(), t;                   /* (a track's last digit where it is on, a dot where not) */
         char map[17];
@@ -218,6 +224,13 @@ static void draw_page(void *view, void *canvas, uint32_t track, int dg_page, int
 int32_t dg_ui_page = -1;                                 /* the SYN page last drawn (tests navigate by it) */
 int32_t dg_ui_first = -1;                                /* the first DigiGlide page of the track last drawn (tests) */
 static int dg_page_shown;                               /* a DigiGlide page was drawn in this screen pass */
+static int dg_page_prev;                                /* ... in the last finished pass */
+int dg_ui_on_page(void) { return dg_page_prev || dg_page_shown; }
+
+int dg_ui_shown_page(void)                              /* the DigiGlide page on screen in this pass (0..2), or -1 */
+{
+    return dg_page_shown && dg_ui_page >= dg_ui_first ? dg_ui_page - dg_ui_first : -1;
+}
 
 /* from dg_syn_stub: draw a DigiGlide page -> 1, or 0 for the stock draw */
 int dg_syn_draw(void *view, void *canvas)
@@ -260,6 +273,7 @@ void dg_overlay(volatile uint8_t *screen, void *canvas)
             TEXT(canvas, FONT, 73, 55, CENTRED, "%s", nm);
         }
     }
+    dg_page_prev = dg_page_shown;
     dg_page_shown = 0;
     if (!text)
         return;

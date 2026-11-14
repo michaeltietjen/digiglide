@@ -125,7 +125,7 @@ import hashlib
 assert hashlib.sha256(open(osver.STOCK_SYX, 'rb').read()).hexdigest() == osver.STOCK_SHA256, 'not the stock OS file'
 print('OS', osver.OS, osver.STOCK_SYX)
 srcs = ['digiglide.c', 'core/dg_core.c', 'hooks_dg.S', 'probe.S']
-entries = ['dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked']
+entries = ['dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked', 'dg_lock_get', 'dg_lock_put', 'dg_lock_any', 'dg_view_step', 'dg_view_locks', 'dg_lockset_stub', 'dg_lockget_stub', 'dg_lockclr_stub']
 if not a.no_ui:
     gen_ptable(stock, gen / 'ptable.S')
     srcs += ['ui/dg_ui.c', 'ui/hooks_ui.S', str(gen / 'ptable.S')]
@@ -151,6 +151,9 @@ if not a.no_ui:
     m.jsr(A(0x400C24F2), 'dg_page_stub', stock='222f0008202f000c', why='SYN page descriptor: CHORD / MOTION / SETUP')
     m.jsr(A(0x400C2418), 'dg_row_stub', stock='202f00040c8000000141', why='knob row for entries 321..338')
     m.jsr(A(0x40018118), 'dg_syn_stub', stock='4fefffe448d71c1c', why='SYN page draw (every machine): DigiGlide draws its pages')
+    m.jsr(A(0x4004F8FE), 'dg_lockset_stub', stock='2f0a2f02246f000c', why='set lock: a DigiGlide row\'s lock goes to the packed lanes')
+    m.jsr(A(0x4004EAA4), 'dg_lockget_stub', stock='206f00042028002c', why='get lock: a DigiGlide row\'s lock comes from the packed lanes')
+    m.jsr(A(0x4004F944), 'dg_lockclr_stub', stock='2f0a2f02246f000c', why='remove lock: a DigiGlide row\'s lock leaves the packed lanes')
     m.jsr(A(0x4011D398), 'dg_pass_stub', stock='420015400020', why='end of the screen pass: the shortcut and its message')
     print(f'parameter table: {len(bases)} bases, {len(bounds)} bounds, {len(RECORDS)} records added')
 m.write(out)
