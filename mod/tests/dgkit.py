@@ -66,6 +66,26 @@ def pbytes(p):
     return bytes(getattr(p, f) for f in FIELDS)
 
 
+# Stock's allocator (malloc, free, their helpers and the new / delete veneers) is not re-entrant. Kit.call runs a stock
+# routine on its own stack wherever the main thread happens to be stopped; if that is inside the allocator and the
+# routine allocates too, the heap's free list is corrupted, some hundred frames later a stock table at the heap's base is
+# overwritten, the UI throws std::out_of_range("bitset::set") and ends in abort: no key registers any more. Where a
+# boot snapshot stops depends only on the image's layout (build 18's prototypes stopped in the allocator, image 17 did
+# not), so this looked like a regression of the mod. settle() steps the main thread out of the allocator first.
+HEAP_CODE = (0x401200E0, 0x4012055C) if osver.OS == '1.12' else (0x4011FE00, 0x4012027C)
+
+
+def settle(k, tries=4000):
+    """run the main thread until neither its pc nor a return address near the top of its stack is in the allocator."""
+    h, (lo, hi) = k.h, HEAP_CODE
+    for _ in range(tries):
+        sp = k.uc.reg_read(cfkit.mc.UC_M68K_REG_A7)
+        if not (lo <= h.pc < hi) and not any(lo <= w < hi for w in struct.unpack('>48I', h.r(sp, 192))):
+            return True
+        h.run(211)
+    return False
+
+
 class Session:
     """img=None -> stock. Track 1 reserves `reserve` voices; every track's demo trigs are cleared when solo."""
 
@@ -74,6 +94,8 @@ class Session:
         sec3 = img[:-4] + '/section_3.bin' if img else osver.SEC3_STOCK
         out = img[:-4] + '/emu_' + tag if img else (osver.STOCK_EMU if tag == 'stock' else osver.STOCK_EMU.replace('_emu', '_' + tag))
         self.k = k = cfkit.Kit(sec3, osver.STOCK_SYX, None, out)
+        raw_call = k.call
+        k.call = lambda fn, args=(): (settle(k), raw_call(fn, args))[1]
         self.app = k.call(A(0x4018A97A))
         cfg = k.call(A(0x40030AF8), [k.call(A(0x4003E41A), [self.app])])
         k.call(A(0x40029094), [cfg, 0, reserve])

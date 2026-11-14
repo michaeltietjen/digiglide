@@ -125,7 +125,7 @@ import hashlib
 assert hashlib.sha256(open(osver.STOCK_SYX, 'rb').read()).hexdigest() == osver.STOCK_SHA256, 'not the stock OS file'
 print('OS', osver.OS, osver.STOCK_SYX)
 srcs = ['digiglide.c', 'core/dg_core.c', 'hooks_dg.S', 'probe.S']
-entries = ['dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked', 'dg_lock_get', 'dg_lock_put', 'dg_lock_any', 'dg_view_step', 'dg_view_locks', 'dg_lockset_stub', 'dg_lockget_stub', 'dg_lockclr_stub']
+entries = ['dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked', 'dg_lock_get', 'dg_lock_put', 'dg_lock_any', 'dg_view_step', 'dg_view_locks', 'dg_lockset_stub', 'dg_lockget_stub', 'dg_lockclr_stub', 'dg_arp_in', 'dg_arp_out', 'dg_arp_single', 'dg_arp_ins', 'dg_arp_outs', 'dg_arp_last']
 if not a.no_ui:
     gen_ptable(stock, gen / 'ptable.S')
     srcs += ['ui/dg_ui.c', 'ui/hooks_ui.S', str(gen / 'ptable.S')]
@@ -136,6 +136,8 @@ ISR_MOVE = '2039' + f'{A(0x402876F8):08x}'          # move.l <ISR counter>,%d0
 m.context(A(0x40025E88), '6620', 'bnes right after the hooked move: reads its flags (the stub replays the move last)')
 m.context(A(0x40025E94), '4879' + f'{A(0x80005E60):08x}', 'the frame the driver sends right after: 0x80005e60')
 m.jsr(A(0x40025E82), 'dg_stub', stock=ISR_MOVE, why='audio ISR: before the frame goes to the DSP -> dg_tx')
+m.jsr(A(0x40026762), 'dg_arp_in', stock='4eb940029cd4', why='notes into the arp: a DigiGlide track gives its chord')
+m.jsr(A(0x40026D3C), 'dg_arp_out', stock='4eb940029fa6', why='a key leaves the arp: its chord notes go')
 m.jsr(A(0x4012169A), 'dg_probe_rx', stock='47f9' + f'{A(0x40207AE6):08x}',
       why='SysEx router, before the Elektron header compare: the read-only USB probe (HELLO, PEEK)')
 if not a.no_ui:

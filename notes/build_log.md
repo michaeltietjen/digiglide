@@ -769,3 +769,54 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   own in "next note": later, after the plain arp works.
 - Not known yet: who calls "note out" for a key release; what DigiGlide's frame hook does with the arp's notes on
   a track whose voices are reserved; how SHUF, RAND and CHRD differ (not in "next note").
+
+## Build 18 (2026-11-14): the stock arp plays DigiGlide's chord
+
+- What it does. On a DigiGlide track (VCNT on) with the stock arp's MODE anywhere but OFF and CHRD, the arp is
+  given the chord's notes in place of the key's root, and the arp's own note-ons go through DigiGlide as single
+  stock notes. MODE OFF and MODE CHRD behave as in image 17 (the whole chord on a note, or on every arp step).
+  SPEED, RANGE, N.LEN, OFFSET and LENGTH are stock's and work on the chord. No new parameter.
+- Hooks (1.12): the one "notes in" call at 0x40026762 goes to `dg_arp_in`, the one external "note out" call at
+  0x40026D3C to `dg_arp_out` (digiglide.c, section "build 18"). `dg_arp_in` calls stock once per chord note with
+  a copy of the 6-byte record and returns the first nonzero result (only the call that starts the set returns
+  the arp's run id; returning the last one left the arp silent). `dg_arp_out` takes out every note the released
+  key added that no other held key still needs. The chord: TYPE, EXT, KEY and POS at the playhead (so locks
+  count), close position from the root, seconds as ninths, POS as inversions ((POS - 64) / 8). VOIC is not
+  applied to the arp's notes.
+- The note-on path: `p_on && nres >= 3 && !dg_arp_single(t)`.
+- Tests: `mod/tests/test_b18_arp.py`, 12 checks (UP, DOWN, a POS lock on one step, CHRD, OFF, a non-DigiGlide
+  track unchanged, a held key and `dg_arp_out`).
+- Not tested: two keys held at once and a key release from the panel (after the first key in KEYB mode the
+  emulator registers no further key change, stock track too; `dg_arp_out` is called directly instead), and the
+  unit itself. Harp as a ninth MODE is not in this build.
+
+### A regression that was the test harness (cost: most of a day)
+
+- Symptom: with the build 18 source every other suite failed; `select_track` returned False, no key registered.
+  Removing only `&& !dg_arp_single(t)` made it pass, so it looked like the new code.
+- What it was not: the two builds run the same instructions in the idle frame hook (traced, they differ in
+  register names only: m68k objdump at `~/dn2-workspace/m68k/bin`, `-m m68k:cfv4e`; capstone cannot read
+  ColdFire); the mod writes nowhere but its own memory and the stack; stock neither reads nor writes the mod's
+  memory; a build calling a do-nothing function at the same place failed the same way; shifting BSS by 0x40 did
+  not help; forcing single-step emulation did not help.
+- What it was: stock's allocator is not re-entrant, and `Kit.call` runs a stock routine on its own stack wherever
+  the main thread happens to be stopped. In the failing builds the boot snapshot stopped the main thread inside
+  the allocator (pc 0x40120108 or 0x401200E0; image 17 and the passing variant stopped elsewhere). The session's
+  first calls allocate, the free list was corrupted, and about 80 frames later free() wrote a free-block header
+  into a stock table at the heap's base (0x4464BBF0, key numbers 26..41 read through the vector at 0x4059DDA4).
+  The UI then threw std::out_of_range("bitset::set") from 0x4018B1C0 (called at 0x4006A854), nothing caught it,
+  and the main thread sat in the abort loop at 0x40139072 while the interrupts went on.
+- Fix: `dgkit.settle` steps the main thread until neither its pc nor a return address near the top of its stack
+  is in the allocator (1.12: 0x401200E0..0x4012055C), before every `Kit.call`. The failing builds then run 1200
+  frames with the table intact. The firmware source did not change for this.
+- 1.12 addresses met on the way: malloc 0x401202C8 (takes the mutex 0x445E2E40 through 0x40001608), free
+  0x401204CE, operator new / delete 0x40120544 / 0x40120550, heap record 0x4029F0DC (base 0x4464BBF0, bitmap
+  0x445A2E40, end 0x4664BBF0, live count at +0x18), __cxa_throw 0x401CFD74, the unwinder's entry 0x4017B370.
+- Lesson: when a layout change alone flips a test, look at where the snapshot stopped (`h.pc`) before reading
+  compiler output.
+- Suites on the prototype (full source, harness fix in): test_b18_arp 12, test_rev5 36, test_every_machine 30,
+  test_b17_locks 20, test_rev5_record 14, test_probe 13, test_rev5_trigs 6, test_off_is_stock 6,
+  make_brickglide_pad 4: 141 checks, all pass.
+- Image: `DN2_1.12_DIGIGLIDE_18.syx`, sha256 51dda574129673e22391090af90793392214c11aa28304499f2c3518ed344f1b,
+  preflight 22/22, `__bss_end` 0x46810384. Its code differs from the tested prototype in the build number only
+  (10 bytes). Not flashed by me.

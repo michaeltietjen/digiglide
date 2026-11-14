@@ -1016,6 +1016,8 @@ static void fire_event(void)
     DG.events++;
 }
 
+int dg_arp_single(uint32_t t);
+
 void dg_tx(void)
 {
     volatile uint8_t *f = FRAME;
@@ -1075,7 +1077,7 @@ void dg_tx(void)
                 DG.dbg_nres = nres;
                 DG.dbg_v = (uint32_t)v;
             }
-            if (p_on && nres >= 3) {
+            if (p_on && nres >= 3 && !dg_arp_single(t)) {   /* (the arp's notes are single stock notes) */
                 if (!nnew) {                            /* the event's parameters: the first note's */
                     if (DG.ctl && (base != DG.base || nres != DG.nres)) {      /* VOICES changed under a chord */
                         noff |= (uint16_t)(DG.ctl & DG.was_on);
@@ -1235,3 +1237,130 @@ void dg_tx(void)
         wr16(f, 0x24, noff); wr16(f, 0x28, noff);
     }
 }
+
+/* ------------------------------------------------------------------ build 18: the stock arpeggiator plays the chord
+ * Stock (notes/build_log.md, "Build 18"): the sequencer's note handler gives a track's notes to the arp with "notes
+ * in" (0x40029cd4, one call site) when the sound's arp MODE (+351) is not OFF; a key release takes its note out
+ * with "note out" (0x40029fa6, one call site); the arp then sends one note per arp step down the ordinary note
+ * path. Both call sites come here. On a DigiGlide track the arp gets the chord of the key (TYPE, EXT, KEY and the
+ * step's locks; POS moves the figure through the chord's inversions) in place of the key, and dg_tx lets the arp's
+ * notes through as single stock notes. MODE CHRD (all notes on every step) is left as it was: the whole DigiGlide
+ * chord is struck on every step. */
+#define ARP_MODE 351
+#define ARP_CHRD 7
+typedef int32_t (*arp_in_fn)(uint32_t, uint8_t *, uint8_t *, int32_t, uint32_t, uint32_t, uint32_t, uint8_t *,
+                             uint32_t *, uint32_t *);
+#define ARP_IN ((arp_in_fn)OSA_40029CD4)
+#define ARP_OUT ((int32_t (*)(uint32_t, uint32_t))OSA_40029FA6)
+#define ARP_KEYS 4
+static struct { uint8_t root, n, note[7]; } arp_key[16][ARP_KEYS];   /* per track: the keys down and what they added */
+uint32_t dg_arp_ins, dg_arp_outs;                       /* chords given to the arp, keys taken out (tests) */
+uint8_t dg_arp_last[8];                                 /* the notes last given: count, then the notes (tests) */
+
+int dg_arp_single(uint32_t t)                           /* the arp plays this DigiGlide track's chord note by note */
+{
+    uint32_t m;
+    if (t >= 16 || !SOUNDS || !dg_synth(t))
+        return 0;
+    m = sound_of(t)[ARP_MODE];
+    return m && m != ARP_CHRD && dg_vcnt_on(dg_par(t, K_VCNT));
+}
+
+static uint32_t arp_chord(uint32_t t, uint32_t root, uint8_t *out)
+{
+    uint32_t step = PLAYHEAD[t], w, i, n = 0;
+    int l1, l2, l3;
+    int32_t typ = par_at(t, step, K_TYPE, &l1) >> 8, ext = par_at(t, step, K_EXT, &l2) >> 8;
+    int32_t key = par_at(t, step, K_KEY, &l3) >> 8, inv = ((par_at(t, step, K_POS, &l3) >> 8) - 64) / 8;
+    int32_t nt[7];
+    w = dg_chord_for((int32_t)root, typ & 3, ext & 7, key, (uint32_t)(l1 | l2 << 1));
+    for (i = 0; i < 12 && n < 7; i++)                   /* close position on the key; a second is played as a ninth */
+        if ((w >> ((root + i) % 12)) & 1)
+            nt[n++] = (int32_t)(root + i) + (i == 1 || i == 2 ? 12 : 0);
+    for (i = 1; i < n; i++) {                           /* ascending */
+        int32_t x = nt[i];
+        uint32_t j = i;
+        for (; j > 0 && nt[j - 1] > x; j--)
+            nt[j] = nt[j - 1];
+        nt[j] = x;
+    }
+    for (; inv > 0 && n; inv--) {                       /* POS up: the lowest note goes up an octave */
+        int32_t x = nt[0] + 12;
+        for (i = 0; i + 1 < n; i++)
+            nt[i] = nt[i + 1];
+        while (n > 1 && x <= nt[n - 2])
+            x += 12;
+        nt[n - 1] = x;
+    }
+    for (; inv < 0 && n; inv++) {                       /* POS down: the highest note goes down an octave */
+        int32_t x = nt[n - 1] - 12;
+        for (i = n - 1; i > 0; i--)
+            nt[i] = nt[i - 1];
+        while (n > 1 && x >= nt[1])
+            x -= 12;
+        nt[0] = x;
+    }
+    for (i = 0; i < n; i++)
+        out[i] = (uint8_t)(nt[i] < 0 ? nt[i] + 12 * ((11 - nt[i]) / 12) : nt[i] > 127 ? nt[i] - 12 * ((nt[i] - 116) / 12) : nt[i]);
+    return n;
+}
+
+int32_t dg_arp_in(uint32_t t, uint8_t *rec, uint8_t *base, int32_t next, uint32_t deflen, uint32_t tbase,
+                  uint32_t tick, uint8_t *snd, uint32_t *is_on, uint32_t *restarted)
+{
+    uint8_t one[8], nt[7];
+    uint32_t i, n, k, slot = 0;
+    int32_t r = 0;
+    if (!rec || !snd || !snd[ARP_MODE] || !dg_arp_single(t))
+        return ARP_IN(t, rec, base, next, deflen, tbase, tick, snd, is_on, restarted);
+    n = arp_chord(t, rec[2], nt);
+    for (k = 0; k < ARP_KEYS; k++)                      /* this key's entry, or a free one, or the first */
+        if (arp_key[t][k].n && arp_key[t][k].root == rec[2])
+            slot = k + 1;
+    for (k = 0; !slot && k < ARP_KEYS; k++)
+        if (!arp_key[t][k].n)
+            slot = k + 1;
+    slot = slot ? slot - 1 : 0;
+    arp_key[t][slot].root = rec[2];
+    arp_key[t][slot].n = (uint8_t)n;
+    dg_arp_last[0] = (uint8_t)n;
+    for (i = 0; i < n; i++) {
+        for (k = 0; k < 6; k++)
+            one[k] = rec[k];
+        one[2] = nt[i];
+        arp_key[t][slot].note[i] = nt[i];
+        dg_arp_last[1 + i] = nt[i];
+        {   /* (stock returns the arp's run id from the call that starts it, 0 from one that only adds a note) */
+            int32_t x = ARP_IN(t, one, base, -1, deflen, tbase, tick, snd, is_on, restarted);
+            if (x)
+                r = x;
+        }
+    }
+    dg_arp_ins++;
+    return r;
+}
+
+int32_t dg_arp_out(uint32_t t, uint32_t note)
+{
+    uint32_t k, i, j, q;
+    int32_t r = 0;
+    if (t >= 16)
+        return ARP_OUT(t, note);
+    for (k = 0; k < ARP_KEYS; k++)
+        if (arp_key[t][k].n && arp_key[t][k].root == note)
+            break;
+    if (k == ARP_KEYS)
+        return ARP_OUT(t, note);
+    for (i = 0; i < arp_key[t][k].n; i++) {             /* its notes, but not one another key still holds */
+        int kept = 0;
+        for (j = 0; j < ARP_KEYS; j++)
+            for (q = 0; j != k && q < arp_key[t][j].n; q++)
+                kept |= arp_key[t][j].note[q] == arp_key[t][k].note[i];
+        if (!kept)
+            r |= ARP_OUT(t, arp_key[t][k].note[i]);
+    }
+    arp_key[t][k].n = 0;
+    dg_arp_outs++;
+    return r;
+}
+
