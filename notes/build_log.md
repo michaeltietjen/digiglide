@@ -739,3 +739,33 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
   "no row can be p-locked" rewritten: only the six rows, no row randomised), test_rev5_record 14, test_probe 13,
   test_rev5_trigs 6, test_off_is_stock 6, make_brickglide_pad 4: all pass. Not flashed by me; not yet on the unit.
 - Owner flashed image 17 (2026-11-13): "seems to work". No detail yet on which locks were tried.
+
+## Build 18, first reading (2026-11-13): the stock arpeggiator, to be fed DigiGlide's chord
+
+- Owner: Arp and Harp should be settings of the stock arp, not DigiGlide parameters. DigiGlide decides the notes,
+  the arp decides when and in what order.
+- The arp page ([ARP]): MODE, SPEED, RANGE, N.LEN, a note OFFSET per arp step (knob E) and ARP LENGTH (knob H).
+  MODE has 8 values, names in two tables of 8 pointers at 0x401D4F1C (OFF TRUE UP DOWN CYCL SHUF RAND CHRD) and
+  0x401D4F3C (the long names), referenced once each (0x40019240, 0x4001925A); the speed names follow directly, so
+  a longer list needs new tables. MODE is sound byte +351 (a copy at +374); these are not parameter-table records.
+- Engine (1.12 addresses). Per track: state of 40 bytes at 0x405994A8 + 40 * track (+0 arp step, +4 / +8 / +0x10
+  the walk through the note set, +0xC last note, +0x1C octave of RANGE, +0x20 the sound); the held notes as a
+  128-bit set at 0x40599728 + 16 * track; for TRUE a linked list in press order (0x40599828); timed note-offs in a
+  queue (0x405914A4, head 0x405994A4).
+  - "notes in" 0x40029CD4 (track, note record, record base, next index, default length, time base, tick, sound,
+    out: arp is on, out: restarted): returns at once with "arp off" when sound +351 is 0; else adds every note of
+    the record list to the set (record: 6 bytes, +2 note, +4 length). A newer tick clears the set first
+    (0x40029BE8). One caller: 0x40026762, in the sequencer's note event handler.
+  - "note out" 0x40029FA6 (track, note): takes one note out of the set.
+  - "next note" 0x4002A0BC (track, id): advances the arp step, picks the note by MODE (1 TRUE: the list; 2 UP;
+    3 DOWN; the others share one up-and-down walk here), adds 12 per RANGE octave and the step's OFFSET. Called
+    from the same handler for arp step events (0x400266E0, 0x4002686E); the note then goes down the ordinary
+    note path, so it reaches DigiGlide's frame hook as a plain note-on (as measured on 2026-11-11).
+- Design that follows: hook the one "notes in" call. On a DigiGlide track give the arp the chord's notes (TYPE,
+  EXT, KEY, VOIC, POS, locks) in place of the root; a key release takes all of them out. While the arp is on,
+  DigiGlide lets the arp's note-ons through as single notes; MODE CHRD keeps today's behaviour (the whole chord
+  on every step). Stock's modes, SPEED, RANGE, N.LEN, OFFSET and LENGTH then work on DigiGlide's chord with no
+  new parameters. Harp as a ninth MODE needs the two name tables moved, the knob's limit raised and a walk of its
+  own in "next note": later, after the plain arp works.
+- Not known yet: who calls "note out" for a key release; what DigiGlide's frame hook does with the arp's notes on
+  a track whose voices are reserved; how SHUF, RAND and CHRD differ (not in "next note").
