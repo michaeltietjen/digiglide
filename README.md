@@ -8,6 +8,8 @@ extension, key, voicing), and the way the voices travel is set per track: glide 
 
 It works on FM TONE, WAVETONE, FM DRUM and SWARMER tracks, as three extra pages after the machine's own SYN pages.
 
+**How to use it: [MANUAL.md](MANUAL.md).**
+
 ## Status: in development
 
 This is work in progress, used on one unit, the author's. Features and storage formats change between builds.

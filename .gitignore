@@ -17,3 +17,13 @@ mod/core/build/
 renders/M5/.cache/
 renders/M5/*.wav
 notes/*.jsonl
+# large audio renders: regenerate with the experiments/ scripts named in notes/build_log.md
+renders/b29/
+renders/b33/
+renders/glid_fit/*.wav
+renders/rev5/*.wav
+# emulator and unit captures
+experiments/out/*.npy
+experiments/out/unit/
+# working copies
+notes/build_log copy.md

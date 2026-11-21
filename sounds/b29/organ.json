@@ -1,0 +1,100 @@
+{
+ "name": "GLASS ORGAN",
+ "machine": "FM TONE",
+ "character": "Four partials a voice, 1 2 3 4, each a hair off, almost no FM: a soft additive organ. Made for TUNE PURE, where the partials of the chord notes line up.",
+ "changed_from_init": {
+  "Filter FREQ (Frequency, slot 67)": {
+   "knob": 104,
+   "fine": 0,
+   "stored": "0x6800",
+   "default": "0x7f00"
+  },
+  "Amp ATK (Attack Time, slot 81)": {
+   "knob": 80,
+   "fine": 0,
+   "stored": "0x5000",
+   "default": "0x0800"
+  },
+  "Amp DEC (Decay Time, slot 83)": {
+   "knob": 127,
+   "fine": 0,
+   "stored": "0x7f00",
+   "default": "0x2000"
+  },
+  "Amp SUS (Sustain Level, slot 84)": {
+   "knob": 127,
+   "fine": 0,
+   "stored": "0x7f00",
+   "default": "0x6000"
+  },
+  "Amp REL (Release Time, slot 85)": {
+   "knob": 104,
+   "fine": 0,
+   "stored": "0x6800",
+   "default": "0x1800"
+  },
+  "FX REV (Reverb Send, slot 87)": {
+   "knob": 45,
+   "fine": 0,
+   "stored": "0x2d00",
+   "default": "0x0000"
+  },
+  "SYN ALGO (Algorithm, slot 25)": {
+   "knob": 6,
+   "fine": 0,
+   "stored": "0x0600",
+   "default": "0x0000"
+  },
+  "SYN RTOA (Ratio A, slot 27)": {
+   "knob": 7,
+   "fine": 0,
+   "stored": "0x0700",
+   "default": "0x0300"
+  },
+  "SYN RTOB (Ratio B, slot 28)": {
+   "knob": 0,
+   "fine": 202,
+   "stored": "0x00ca",
+   "default": "0x0078"
+  },
+  "SYN MIX (Mix, slot 32)": {
+   "knob": 58,
+   "fine": 0,
+   "stored": "0x3a00",
+   "default": "0x0000"
+  },
+  "SYN AOFF (Ratio A Offset, slot 59)": {
+   "knob": 64,
+   "fine": 10,
+   "stored": "0x400a",
+   "default": "0x4000"
+  },
+  "SYN B1OF (Ratio B1 Offset, slot 60)": {
+   "knob": 63,
+   "fine": 249,
+   "stored": "0x3ff9",
+   "default": "0x4000"
+  },
+  "SYN B2OF (Ratio B2 Offset, slot 61)": {
+   "knob": 64,
+   "fine": 15,
+   "stored": "0x400f",
+   "default": "0x4000"
+  },
+  "SYN LEV (A Level, slot 38)": {
+   "knob": 8,
+   "fine": 0,
+   "stored": "0x0800",
+   "default": "0x0000"
+  },
+  "SYN LEV (B Level, slot 42)": {
+   "knob": 10,
+   "fine": 0,
+   "stored": "0x0a00",
+   "default": "0x0000"
+  }
+ },
+ "couple": "AB LEVEL (LVAB, FM TONE page 4): up for more FM between the operators, down to the centre for the sound as saved, below about -16 for none. Up: the partials start to bend each other and the organ turns reedy.",
+ "lfo": null,
+ "digiglide": "VCNT 4, GLID 2 bars, HOLD on, DRFT 4, VIB 0, TUNE PURE, FAN 64, TYPE MAJ, EXT 9, VOIC 90"
+}

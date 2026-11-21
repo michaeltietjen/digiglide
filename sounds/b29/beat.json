@@ -1,0 +1,82 @@
+{
+ "name": "BEAT FIELD",
+ "machine": "FM TONE",
+ "character": "Two pairs a voice: C with A, and B1 with B2 0.4 % above them. No FM from one pair to the other, a little inside each. Each voice beats at its own slow rate.",
+ "changed_from_init": {
+  "Filter FREQ (Frequency, slot 67)": {
+   "knob": 115,
+   "fine": 0,
+   "stored": "0x7300",
+   "default": "0x7f00"
+  },
+  "Amp ATK (Attack Time, slot 81)": {
+   "knob": 76,
+   "fine": 0,
+   "stored": "0x4c00",
+   "default": "0x0800"
+  },
+  "Amp DEC (Decay Time, slot 83)": {
+   "knob": 127,
+   "fine": 0,
+   "stored": "0x7f00",
+   "default": "0x2000"
+  },
+  "Amp SUS (Sustain Level, slot 84)": {
+   "knob": 127,
+   "fine": 0,
+   "stored": "0x7f00",
+   "default": "0x6000"
+  },
+  "Amp REL (Release Time, slot 85)": {
+   "knob": 105,
+   "fine": 0,
+   "stored": "0x6900",
+   "default": "0x1800"
+  },
+  "FX REV (Reverb Send, slot 87)": {
+   "knob": 45,
+   "fine": 0,
+   "stored": "0x2d00",
+   "default": "0x0000"
+  },
+  "SYN ALGO (Algorithm, slot 25)": {
+   "knob": 6,
+   "fine": 0,
+   "stored": "0x0600",
+   "default": "0x0000"
+  },
+  "SYN MIX (Mix, slot 32)": {
+   "knob": 64,
+   "fine": 0,
+   "stored": "0x4000",
+   "default": "0x0000"
+  },
+  "SYN B1OF (Ratio B1 Offset, slot 60)": {
+   "knob": 64,
+   "fine": 66,
+   "stored": "0x4042",
+   "default": "0x4000"
+  },
+  "SYN B2OF (Ratio B2 Offset, slot 61)": {
+   "knob": 64,
+   "fine": 66,
+   "stored": "0x4042",
+   "default": "0x4000"
+  },
+  "SYN LEV (A Level, slot 38)": {
+   "knob": 22,
+   "fine": 0,
+   "stored": "0x1600",
+   "default": "0x0000"
+  },
+  "SYN LEV (B Level, slot 42)": {
+   "knob": 22,
+   "fine": 0,
+   "stored": "0x1600",
+   "default": "0x0000"
+  }
+ },
+ "couple": "AB LEVEL (LVAB, FM TONE page 4): up for more FM between the operators, down to the centre for the sound as saved, below about -16 for none. It adds harmonics inside each pair, and each harmonic beats faster than the one below.",
+ "lfo": null,
+ "digiglide": "VCNT 3, GLID 4 bars, HOLD on, DRFT 0, VIB 0, TYPE 5TH"
+}

@@ -75,7 +75,8 @@ def record_and_play(image, hold=False, atk=64):
     fr = p.play(3000, bpm=120, each=(lambda i: names.append(bytes(h2.r(p.sym['dg_name'], 16)).split(b'\0')[0].decode()))
                 if image else None)
     st0 = len(h2.sent)
-    h2.frames(900)                                       # after [STOP]: the emulated UI acts on the key up to 650 frames later
+    h2.frames(1500)                                      # after [STOP]: the emulated UI acts on the key late; the release came
+                                                         # 896 blocks after it on image 25, 907 on images 26 and 27 (900 was too few)
     after = [x for x, _ in h2.sent[st0:]]
     return dict(trigs=trigs, rec_offs=len(rec_offs), fr=fr, names=names, sess=p, after=after)
 

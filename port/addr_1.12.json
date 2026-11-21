@@ -31,6 +31,10 @@
    "to": "0x400175E4",
    "how": "image"
   },
+  "0x40018118": {
+   "to": "0x40018118",
+   "how": "image (the SYN page draw; 1.12 disassembly read; 1.11 assumed equal, as 0x40018214 inside it)"
+  },
   "0x40018214": {
    "to": "0x40018214",
    "how": "image"
@@ -51,6 +55,14 @@
    "to": "0x40025E94",
    "how": "image"
   },
+  "0x40026762": {
+   "to": "0x40026762",
+   "how": "image"
+  },
+  "0x40026D3C": {
+   "to": "0x40026D3C",
+   "how": "image"
+  },
   "0x40027AC0": {
    "to": "0x40027AC0",
    "how": "image"
@@ -65,6 +77,14 @@
   },
   "0x40029094": {
    "to": "0x40029094",
+   "how": "image"
+  },
+  "0x40029CD4": {
+   "to": "0x40029CD4",
+   "how": "image"
+  },
+  "0x40029FA6": {
+   "to": "0x40029FA6",
    "how": "image"
   },
   "0x40030AF8": {
@@ -99,6 +119,10 @@
    "to": "0x4003EFDE",
    "how": "image"
   },
+  "0x4003F1AE": {
+   "to": "0x4003F1AE",
+   "how": "image"
+  },
   "0x400446C2": {
    "to": "0x400446C2",
    "how": "image"
@@ -111,12 +135,24 @@
    "to": "0x40046BFE",
    "how": "image"
   },
+  "0x4004EAA4": {
+   "to": "0x4004EAA4",
+   "how": "image"
+  },
   "0x4004F8FE": {
    "to": "0x4004F8FE",
    "how": "image"
   },
+  "0x4004F944": {
+   "to": "0x4004F944",
+   "how": "image"
+  },
   "0x40054690": {
    "to": "0x40054690",
+   "how": "image"
+  },
+  "0x40055BC4": {
+   "to": "0x40055BC4",
    "how": "image"
   },
   "0x4006448A": {
@@ -175,6 +211,10 @@
    "to": "0x400CFAB4",
    "how": "image"
   },
+  "0x400D3C64": {
+   "to": "0x400D3DC8",
+   "how": "image: the intro step function (image 35, the splash hook)"
+  },
   "0x400D7864": {
    "to": "0x400D79C8",
    "how": "image"
@@ -227,6 +267,26 @@
    "to": "0x4011D678",
    "how": "image"
   },
+  "0x4012166E": {
+   "to": "0x4012194E",
+   "how": "image (SysEx router entry, same shift as the probe hook inside it; used by tests only)"
+  },
+  "0x4012169A": {
+   "to": "0x4012197A",
+   "how": "image (addrmap.py; hook bytes 47f9 + ELK_HDR checked)"
+  },
+  "0x401233F2": {
+   "to": "0x401236D2",
+   "how": "image (addrmap.py)"
+  },
+  "0x40131C74": {
+   "to": "0x40131F54",
+   "how": "image: full display flush"
+  },
+  "0x40131CF2": {
+   "to": "0x40131FD2",
+   "how": "image: diff display flush"
+  },
   "0x40134490": {
    "to": "0x40134770",
    "how": "image"
@@ -246,6 +306,10 @@
   "0x401FCAC8": {
    "to": "0x401FCED8",
    "how": "image"
+  },
+  "0x40207AE6": {
+   "to": "0x40207F9E",
+   "how": "image (addrmap.py; holds f0 00 20 3c)"
   },
   "0x40210800": {
    "to": "0x40210CB8",
@@ -267,6 +331,10 @@
    "to": "0x4028DFB0",
    "how": "image"
   },
+  "0x402A0B88": {
+   "to": "0x402A10C8",
+   "how": "image: fb_front pointer"
+  },
   "0x402A0B8C": {
    "to": "0x402A10CC",
    "how": "image"
@@ -282,6 +350,18 @@
   "0x4058E54C": {
    "to": "0x4058F54C",
    "how": "ram (257/257 references agree)"
+  },
+  "0x4058E8D4": {
+   "to": "0x4058F8D4",
+   "how": "ram (78/78 references agree)"
+  },
+  "0x405CD96C": {
+   "to": "0x405CE96C",
+   "how": "ram (working project image; dnfw 1.11 0x405cd85c + 0x110, 1.12 from naturarum/dn2-cfw T6.0, read on the unit)"
+  },
+  "0x4210C08C": {
+   "to": "0x4210D08C",
+   "how": "ram (live kits; 1.12 from naturarum/dn2-cfw T6.0 and the unit; the 1.11 value is ASSUMED (1.12 - 0x1000))"
   },
   "0x4243298C": {
    "to": "0x4243398C",
@@ -302,6 +382,10 @@
   "0x42440958": {
    "to": "0x42441958",
    "how": "ram (34/34 references agree)"
+  },
+  "0x42C4BAC8": {
+   "to": "0x42C4CAC8",
+   "how": "ram (26/26 references agree): the intro's draw buffer"
   },
   "0x42C5A994": {
    "to": "0x42C5B994",
@@ -334,6 +418,10 @@
   "0x445A1E30": {
    "to": "0x445A2E30",
    "how": "ram (12/12 references agree)"
+  },
+  "0x446478C8": {
+   "to": "0x446488C8",
+   "how": "ram (1677/1678 references agree)"
   },
   "0x446478D0": {
    "to": "0x446488D0",
@@ -387,6 +475,10 @@
    "to": "0x80002510",
    "how": "ram (7/7 references agree)"
   },
+  "0x8000521A": {
+   "to": "0x8000521A",
+   "how": "track mute mask (u16, bit t = track t+1); found on 1.12 by experiment (FUNC + TRIG), 1.11 address assumed equal, not checked"
+  },
   "0x800052A0": {
    "to": "0x800052A0",
    "how": "ram (128/128 references agree)"
@@ -398,74 +490,6 @@
   "0x80005E60": {
    "to": "0x80005E60",
    "how": "ram (13/13 references agree)"
-  },
-  "0x8000521A": {
-   "to": "0x8000521A",
-   "how": "track mute mask (u16, bit t = track t+1); found on 1.12 by experiment (FUNC + TRIG), 1.11 address assumed equal, not checked"
-  },
-  "0x4012166E": {
-   "to": "0x4012194E",
-   "how": "image (SysEx router entry, same shift as the probe hook inside it; used by tests only)"
-  },
-  "0x4012169A": {
-   "to": "0x4012197A",
-   "how": "image (addrmap.py; hook bytes 47f9 + ELK_HDR checked)"
-  },
-  "0x40207AE6": {
-   "to": "0x40207F9E",
-   "how": "image (addrmap.py; holds f0 00 20 3c)"
-  },
-  "0x401233F2": {
-   "to": "0x401236D2",
-   "how": "image (addrmap.py)"
-  },
-  "0x4058E8D4": {
-   "to": "0x4058F8D4",
-   "how": "ram (78/78 references agree)"
-  },
-  "0x40018118": {
-   "to": "0x40018118",
-   "how": "image (the SYN page draw; 1.12 disassembly read; 1.11 assumed equal, as 0x40018214 inside it)"
-  },
-  "0x4210C08C": {
-   "to": "0x4210D08C",
-   "how": "ram (live kits; 1.12 from naturarum/dn2-cfw T6.0 and the unit; the 1.11 value is ASSUMED (1.12 - 0x1000))"
-  },
-  "0x405CD96C": {
-   "to": "0x405CE96C",
-   "how": "ram (working project image; dnfw 1.11 0x405cd85c + 0x110, 1.12 from naturarum/dn2-cfw T6.0, read on the unit)"
-  },
-  "0x40055BC4": {
-   "to": "0x40055BC4",
-   "how": "image"
-  },
-  "0x446478C8": {
-   "to": "0x446488C8",
-   "how": "ram (1677/1678 references agree)"
-  },
-  "0x4004EAA4": {
-   "to": "0x4004EAA4",
-   "how": "image"
-  },
-  "0x40026762": {
-   "to": "0x40026762",
-   "how": "image"
-  },
-  "0x40026D3C": {
-   "to": "0x40026D3C",
-   "how": "image"
-  },
-  "0x40029CD4": {
-   "to": "0x40029CD4",
-   "how": "image"
-  },
-  "0x40029FA6": {
-   "to": "0x40029FA6",
-   "how": "image"
-  },
-  "0x4004F944": {
-   "to": "0x4004F944",
-   "how": "image"
   }
  }
 }

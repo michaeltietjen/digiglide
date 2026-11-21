@@ -71,8 +71,9 @@ Decided by the owner: DigiGlide is a track setting saved with the kit, not part 
 - **Pages.** CHORD, MOTION and SETUP follow each machine's own SYN pages (FM TONE 4 + 3, WAVETONE 3 + 3, FM DRUM 4 + 3, SWARMER 1 + 3). DigiGlide draws them in place of the whole stock SYN page draw (`0x40018118`), because each machine draws its pages its own way.
 - **Knobs.** The 18 parameter records name the kit's FX set, words k 70..87, which stock has no parameter for and sends nowhere. That is one buffer for the kit: the UI copies the selected track's settings into it and copies a turned knob's value from it into the store. The knob rows are copies of stock rows with the lock flag (bit 3) set and the randomiser emptied, because stock files a lock or a randomised value under (track, k) as if k were a sound slot, which would be the filter envelope.
 - **P-locks (image 17).** POS, TYPE, EXT, VOIC, GLID and MOVE can be locked per step on every synth machine: in GRID RECORDING hold a trig and turn the knob. The held step's values are shown while the trig is held, a locked one inverted. Push the knob with the trig held to remove the lock (or, where there is none, to lock the value shown). They are kept in the sequencer's lanes for sound slots 0 and 100, which no machine uses (two of the pattern's 80 lanes per DigiGlide track). A lock on a step without a note trig changes the chord that is sounding. The other parameters cannot be locked. Locks made with images up to 14 (lanes of slots 50..64, 93, 94 on a WAVETONE track) are still read; a value there that is not a value of the parameter is skipped.
-- **Arp (image 18).** The stock arpeggiator ([ARP] page) plays DigiGlide's chord. With VCNT on and the arp's MODE on TRUE, UP, DOWN, CYCL, SHUF or RAND, a note gives the arp the chord's notes (TYPE, EXT, KEY and POS at that step, locks included; close position, POS as inversions, VOIC not applied) and the arp plays them one at a time as single stock notes: DigiGlide decides the notes, the arp decides when and in what order. SPEED, RANGE, N.LEN, OFFSET and ARP LENGTH are stock's. MODE OFF plays the chord as before; MODE CHRD plays the whole chord on every arp step. Harp is not built yet.
-- **Which tracks are on.** SETUP's lower row shows the 16 tracks: a track's last digit where DigiGlide is on, a dot where it is off.
+- **Arp (image 18).** The stock arpeggiator ([ARP] page) plays DigiGlide's chord. With VCNT on and the arp's MODE on TRUE, UP, DOWN, CYCL, SHUF or RAND, a note gives the arp the chord's notes (TYPE, EXT, KEY and POS at that step, locks included; close position, POS as inversions, VOIC not applied) and the arp plays them one at a time as single stock notes: DigiGlide decides the notes, the arp decides when and in what order. SPEED, RANGE, N.LEN, OFFSET and ARP LENGTH are stock's. MODE OFF plays the chord as before; MODE CHRD plays the whole chord on every arp step. Harp is DigiGlide's own PLAY mode (below), not an arp MODE.
+- **PLAY (image 19).** Knob G on the CHORD page. CHRD starts the chord's voices together. STRM starts them one after the other by pitch, low to high, 20 blocks (13 ms) apart, whenever 2 or more attack at once; STRU high to low. HARP plays, on each new chord, a run up through the chord's notes from its lowest chord voice for 3 octaves, 51 blocks (34 ms) a note, round the chord voices; with BASS on the bass is struck with the first note and left out of the run. POS (and a POS lock) moves where the run starts. Notes hold to the trig's end. Slop and Pattern are not built.
+- **Which tracks are on.** On SETUP the header shows the 16 tracks (image 23; before, SETUP's lower row): a track's last digit where DigiGlide is on, a dot where it is off.
 - **Older sounds.** A WAVETONE sound made with image 14 or older carries VCNT's code in slot 54 and HOLD's mark in slot 94. On a track that has no settings of its own its 18 values are taken over once; the sound itself is left as it is. After that the track's settings win.
 - **Not carried yet:** SAVE KIT, kit copy and paste, the +Drive kit library and exports go through stock's kit serializer, which does not move these bytes. Inside a project the settings stay with the pattern's kit. A later build can hook the serializer and loader (`0x400ddfa8`, `0x400dddb6`).
 - **On stock OS** the project loads and plays single notes; stock ignores the bytes and an in-place project save keeps them (Digiwerk's analysis; the save paths were not run by us).
@@ -80,19 +81,19 @@ Decided by the owner: DigiGlide is a track setting saved with the kit, not part 
 
 ## Parameters
 
-Three DigiGlide pages after the machine's own SYN pages. Since rev 6 the values are the track's, kept in the kit; six of them can be p-locked per step since image 17 (see P-locks above). Until image 14 they were sound slots 50..64, 93 and 94 of a WAVETONE sound.
+Three DigiGlide pages after the machine's own SYN pages. Since rev 6 the values are the track's, kept in the kit; six of them can be p-locked per step since image 17 (see P-locks above), and BPAT and BLOOM since image 23. Until image 14 they were sound slots 50..64, 93 and 94 of a WAVETONE sound.
 
 ### Page 4: CHORD
 
 | Knob | Param | Range | Default | What it does |
 | --- | --- | --- | --- | --- |
-| A | TYPE | MAJ, MIN, SUS, DIM | MAJ | The triad, when KEY does not decide |
+| A | TYPE | MAJ, MIN, SUS, DIM, 5TH | MAJ | The triad, when KEY does not decide. 5TH (image 23): root and fifth only, no third, spread over the voices for open drones (with KEY on, the degree and its fifth in the scale); EXT still adds its notes |
 | B | EXT | NONE, 6, 7, MAJ7, 9, 6+9, 7+9, M7+9 | NONE | Extensions |
 | C | KEY | OFF, C to B (major), Cm to Bm (natural minor) | OFF | Diatonic chords for roots in the scale |
 | D | VOIC | 0 to 127 | 127 | Spacing of the chord voices: 0 a tight cluster, 64 close position, 127 wide (the default, owner's choice 2026-11-11) |
 | E | POS | -64 to +63 | 0 | Moves the chord voices' position, through inversions and octaves (two octaves each way) |
 | F | GLID | 0, 1/16 .. 16 bars, 15 s, 30 s, 60 s | 1/8 bar | Glide time; 0 = retrigger. Stored in stock's portamento-time slot (the TRIG page's PTIM turns it) |
-| G | PLAY | CHRD | CHRD | Reserved for the PLAY modes |
+| G | PLAY | CHRD STRM STRU HARP | CHRD | How the chord is struck (image 19): all at once; strummed low to high or high to low, 13 ms a note; a harp run up 3 octaves through the chord, 34 ms a note |
 | H | HOLD | OFF, ON | OFF | Also [FUNC] + push encoder H |
 
 ### Page 5: MOTION
@@ -103,7 +104,7 @@ PATH, TIME, ORDR, STAG / MOVE, DRFT, VIB, SCRB, as before:
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
 | PATH | Smooth, Linear, Ease, Swell, Bounce, Late, Snap, Wobble, Semitones, Scale steps | Smooth | Glide curve, Brickglide's `PATHS` |
-| TIME | Together, By distance, Bass lags, Bass leads, Loose | Together | How long each voice takes, Brickglide's `TIMINGS` |
+| TIME | Together, By distance, Bass lags, Bass leads, Loose, Drone | Together | How long each voice takes, Brickglide's `TIMINGS`. DRON (image 23): Brickchord's drone, the voices from the lowest take GLID x 1, 1.25, 1.5, ... so the upper voices arrive later; the top lands at GLID |
 | ORDR | Together, Low first, High first, Outside in, Random | Together | Which voice starts first, Brickglide's `ORDERS` |
 | STAG | 0, 0.5, 1, 2, 3, 5, 8 (in 1/16 steps) | 0 | Gap between voices for ORDR, before the whole change is fitted into GLID |
 | DRFT | 0 to 50 cents | 8 | Per-voice slow random detune (Brickglide drones default to 8) |
@@ -117,6 +118,19 @@ PATH, TIME, ORDR, STAG / MOVE, DRFT, VIB, SCRB, as before:
 | --- | --- | --- | --- | --- |
 | A | VCNT | OFF, 3, 4, 5, 6 | OFF | **DigiGlide's switch** and the voices used, the bass voice included. Also [FUNC] + push encoder E |
 | B | BASS | OFF, FL-2, FL-1, FOL, SL-2, SL-1, SOLO | FL-1 | The bass voice: Follow or Solo, two, one or no octaves under the root |
+| C | BPAT | HOLD, PULS, OCT, WALK, R-5, ARP, OFFB, 332 | HOLD | **Bass pattern** (image 23), with BASS on (Follow or Solo). HOLD: the bass holds its note, as before. PULS the root every step; OCT root, octave; WALK root, root, fifth, octave; R-5 root, fifth; ARP root, third, fifth, third; OFFB a rest on the beat, the root between; 332 the root on steps 1, 4 and 7 of eight. The fifth and third are the chord's own (6 on DIM; 2 or 5 on SUS; the octave on 5TH). Even steps at full level, odd at 80 % (OFFB all full); each note 80 % of the step, plucked (its envelope restarts). The pattern starts at step 0 on a trig whose root changes; a trig on the same root goes on with it. BASS's octave applies. P-lockable |
+| D | BRAT | 1/4, 1/8, 1/16 | 1/8 | The bass pattern's step, from the tempo |
+| E | SPD | 0 to 127 (shown in ms) | 64 | **Strum and harp speed** (image 21): the gap between a strum's strings, or a harp run's notes. 64 = 13 ms a string, 34 ms a harp note; every 24 down is twice as fast, every 24 up twice as slow (strum 2 to 82 ms, harp 5 to 210 ms). Read at each trig. Not p-lockable |
+| F | BLOM | -64 to +63 | 0 | **Bloom** (image 23). 0: off. Below 0 the upper voices fade out one at a time from the top, toward the bass alone at -64. Above 0 each upper voice's level breathes slowly at its own rate (0.15 to 0.40 Hz), deeper as it rises (to 12 dB at +63). "Upper": every voice but the lowest (the bass voice when BASS is on). Smoothed, turnable live. P-lockable. Not an LFO destination yet (DigiGlide's settings are in the kit, which the stock LFO cannot reach) |
+| G | STRK | OFF, 1, 2, 4 | OFF | **Restrike** (image 23), in beats: with HOLD on and a chord held, the chord is struck again every 1, 2 or 4 beats from its trig, for sounds that don't sustain. Each strike rises from the voices' current level (DigiGlide re-strikes its own voices, so the last strike cannot ring on under the new one as in Brickchord). With PLAY STRM, STRU or HARP each restrike is strummed or run |
+| H | BAL | -64 to +63 | 0 | **Bass balance** (image 24), with BASS on: the bass voice against the chord. 0: as image 23 (every voice at the sound's level, so one bass voice sits about 6 dB under a 4-voice chord). Up: the bass rises to twice its level (it stops at the level word's top, 127) and the chord falls, to 25 % (-12 dB) at +63. Down: the bass fades out, silent at -64. Not p-lockable. A bass pattern's notes are plucked when the sound's AMP ATK is under 32; at 32 and over each note rises from where the bass is, so a slow attack doesn't lose the bass |
+
+Image 23 stores the settings in a new layout ("DGK2", 16 bytes a track, 260 of the kit's 337 spare bytes; image 24 adds BAL, a byte a track after them, as value + 1 so a kit saved by image 23 reads 0). Kits saved by older images are read as they are and converted at their first DigiGlide edit; an image older than 23 reads a converted kit as having no settings. P-locks: TYPE's locks use a new code in lane 0 (old locks are still read); BPAT and BLOOM share a third lane, sound slot 65 (no machine has a record for it; its voice record word changes nothing the DSP plays, `experiments/b23_slot65.py`), so a DigiGlide track can use three of the pattern's 80 lanes.
+
+**Drone presets (image 23).**
+- **DRONE:** TYPE 5TH, EXT NONE, HOLD ON, GLID 2 (bars), TIME DRON, BLOOM 0, BASS FL-1, BPAT HOLD, on a sustaining sound (a WAVETONE or FM TONE pad, AMP ATK slow, SUS full, REL long). One trig per root; each new root slides in with the upper voices arriving later, as Brickchord's drone. Turn BLOOM down to thin it to the bass, up to make it breathe.
+- **DRONE PULSE:** DRONE plus an LFO on the amp volume, synced, one cycle an eighth note: the Elektron rule is SPD x MULT = 128 for one cycle per 16 steps, so an eighth (8 a bar) needs SPD x MULT = 1024, for example SPD 32, MULT 32. Not checked in the emulator yet.
+- **DRONE STRIKE** (for a sound that doesn't sustain, a pluck or bell): DRONE with STRK 2 (beats).
 
 SPRD has no knob in this build: the stereo spread is Brickglide's default (77).
 
@@ -326,7 +340,7 @@ Each milestone must pass its test before anything is flashed. Commit to git afte
 - [ ] **Parked until the core is confirmed (owner, 2026-11-11). Not to be worked on.**
   - **Arp** (stock arpeggiator as the clock for DigiGlide's Arp mode; design brief and stock findings in `notes/build_log.md`, "Arp investigation").
   - **Live function keys** (the performance key layout: type and extension keys with LEDs, recorded with the trig).
-  - **Strums** and the other PLAY modes (Strum, Slop, Harp, Pattern), with the storage extension they need.
+  - The other PLAY modes (Slop, Pattern). Strum and Harp were taken off the list on the owner's request (image 19, 2026-11-14).
   - **POS as a melody control** (owner, 2026-11-13, jamming on image 15: "it's awesome using position to make
     melodies"; "when thinking of harp and things, that might be powerful"). Turning POS under a held chord revoices
     it, and the top voice moves like a tune. To design for: POS as the first parameter to lock per step (build 17),

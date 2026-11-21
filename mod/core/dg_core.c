@@ -182,7 +182,7 @@ static uint32_t below(uint32_t *x, uint32_t n)
 }
 
 /* ------------------------------------------------------------------ chords (rev 5: the model's chord_for) */
-static const uint8_t TRIAD[4][3] = {{0, 4, 7}, {0, 3, 7}, {0, 5, 7}, {0, 3, 6}};      /* MAJ MIN SUS DIM */
+static const uint8_t TRIAD[5][3] = {{0, 4, 7}, {0, 3, 7}, {0, 5, 7}, {0, 3, 6}, {0, 7, 0}};   /* MAJ MIN SUS DIM 5TH */
 static const uint8_t EXT_PART[8] = {0, 1, 2, 4, 8, 1 | 8, 2 | 8, 4 | 8};             /* bit 0: 6, 1: 7, 2: MAJ7, 3: 9 */
 
 /* The chord one key plays. root: MIDI note; typ 0..3; ext 0..7; key: 0 = OFF, 1..12 C..B major, 13..24 C..B minor;
@@ -208,7 +208,7 @@ uint32_t dg_chord_for(int32_t root, int32_t typ, int32_t ext, int32_t key, uint3
             if (sc[k] == imod12(r - tonic))
                 d = k;
     if (d >= 0 && !(locks & 1)) {
-        for (k = 0; k <= 4; k += 2)
+        for (k = 0; k <= 4; k += typ == 4 ? 4 : 2)     /* 5TH (build 23): the degree and its fifth, no third */
             pcs |= 1u << imod12(tonic + sc[(d + k) % 7]);
     } else {
         for (k = 0; k < 3; k++)
@@ -320,11 +320,33 @@ static int voicelead(const int32_t *ref, int n, uint32_t pcs, int32_t bass_note,
 }
 
 /* ------------------------------------------------------------------ shapes (shape_at, path_at) */
+/* build 33: the two products every sounding voice needs every block (the vibrato), without the 64-bit helper: the
+ * same results, from 32-bit products. floor(d * f / 2^21) for d, f < 2^21 is ((d * fh) + ((d * fl) >> 11)) >> 10
+ * with f = fh * 2^11 + fl; floor(v * s / 2^13) for v < 2^18 is v * (s >> 13) + ((v * (s & 0x1FFF)) >> 13). Outside
+ * those ranges the helper is used (the selftest compares both over the table). */
 static int32_t sin_cyc(uint32_t ph)                 /* sin(2 pi ph / 2^32), Q29 */
 {
-    uint32_t i = ph >> 21;
-    int32_t a = DG_SIN[i], b = DG_SIN[i + 1];
-    return a + mulsh(b - a, (int32_t)(ph & 0x1FFFFF), 21);
+    uint32_t i = ph >> 21, f = ph & 0x1FFFFF;
+    int32_t a = DG_SIN[i], b = DG_SIN[i + 1], d = b - a;
+    uint32_t ud = d < 0 ? 0u - (uint32_t)d : (uint32_t)d, r;
+    if (ud >= (1u << 21))
+        return a + mulsh(d, (int32_t)f, 21);
+    r = (ud * (f >> 11) + ((ud * (f & 0x7FF)) >> 11)) >> 10;
+    return d < 0 ? a - (int32_t)r : a + (int32_t)r;
+}
+
+static int32_t vib_term(int32_t vib, uint32_t ph)   /* mulsh(vib * 65536, sin_cyc(ph), 29) */
+{
+    int32_t sn;
+    uint32_t us, r;
+    if (!vib)
+        return 0;
+    sn = sin_cyc(ph);
+    if (vib < 0 || vib >= (1 << 18))
+        return mulsh(vib * 65536, sn, 29);
+    us = sn < 0 ? 0u - (uint32_t)sn : (uint32_t)sn;
+    r = (uint32_t)vib * (us >> 13) + (((uint32_t)vib * (us & 0x1FFF)) >> 13);
+    return sn < 0 ? -(int32_t)r : (int32_t)r;
 }
 
 static int32_t mul29(int32_t a, int32_t b)
@@ -422,13 +444,31 @@ static dg_voice *ensure(dg_track *t, int i)        /* _ensure */
 
 #define KEEP 0xFFFFFFFFu
 
+/* build 29. TUNE Pure: a chord note sits at an exact ratio above the chord's root (which stays equal tempered), by
+ * its interval class: 1 16/15, 9/8, 6/5, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 9/5, 15/8; octaves are exact. The table is
+ * 1200 log2(ratio) - 100 k in Q16 cents. FAN: the chord voices spread evenly either side of pitch, voice i of n at
+ * (2 i - (n - 1)) / (n - 1) of 20 cents x FAN / 127 (4 voices: the inner two at a third of the outer). The bass voice
+ * is not fanned. Both are part of a voice's target, so glides run between the tuned pitches. 0 with TUNE Equal and
+ * FAN 0: the pitches of images <= 28. */
+static const int32_t PURE16[12] = {0, 768822, 256246, 1025067, -896944, -128123, -1146081, 128123, 896944, -1025067,
+                                   1153190, -768822};
+int32_t dg_tune_off(const dg_track *t, int i, int32_t note)
+{
+    int32_t off = 0;
+    if (t->p.tune)
+        off = PURE16[imod12(note - t->aroot)];
+    if (t->p.fan && t->nfan > 1 && i < t->nfan)
+        off += (int32_t)(1310720 / 127) * t->p.fan / (t->nfan - 1) * (2 * i - (t->nfan - 1));
+    return off;
+}
+
 static void push(dg_track *t, int i, int jump, uint32_t glide, int shape, uint32_t delay, const int32_t *via, int nvia,
                  uint32_t tsh)
 {
     dg_voice *v = &t->v[i];
     int32_t old = v->tgt, d;
     int k;
-    v->tgt = v->note * C16;
+    v->tgt = v->note * C16 + dg_tune_off(t, i, v->note);
     if (glide != KEEP)
         v->glide = glide;
     d = v->tgt - old;
@@ -456,6 +496,12 @@ static void push(dg_track *t, int i, int jump, uint32_t glide, int shape, uint32
             num.lo = e < 32 ? 1u << e : 0;
             v->rcp = udiv64(num, v->dur);
         }
+    }
+    else if (d) {                                   /* build 29: a step under half a cent (FAN turned slowly) */
+        if (v->npath)
+            v->path[v->npath - 1] = v->tgt;
+        else
+            v->cur = v->tgt;
     }
     if (jump) {
         v->cur = v->tgt;
@@ -658,14 +704,14 @@ static uint32_t glide_all(dg_track *t, const int8_t *mv_v, const int32_t *mv_n, 
         v->note = note;
         nv = nvia[i];
         if (!nv && path == 9) {
-            nv = steps_via(t, frm, note * C16, sv);
+            nv = steps_via(t, frm, note * C16 + dg_tune_off(t, i, note), sv);
             vp = sv;
         }
         while (rk[r] != i)
             r++;
         switch (p->time) {
         case 1: {
-            int32_t d = note * C16 - frm;
+            int32_t d = note * C16 + dg_tune_off(t, i, note) - frm;
             uint32_t ad = (uint32_t)(d < 0 ? -d : d);
             if (ad < 11468800u)
                 ad = 11468800u;                         /* 0.35 * 500 cents */
@@ -680,6 +726,9 @@ static uint32_t glide_all(dg_track *t, const int8_t *mv_v, const int32_t *mv_n, 
         case 3:
             g = muldiv_r(secs, 6u * mm + 9u * (uint32_t)r, 10u * mm);
             break;
+        case 5:                                     /* DRON (build 23): Brickchord's drone, voice r of the chord */
+            g = muldiv_r(secs, 4u + (uint32_t)r, 4u);   /* from the lowest takes GLID x (1 + 0.25 r) */
+            break;
         case 4: {
             uint32_t x = rng_seed(t, (uint32_t)i, R_LOOSE);
             g = muldiv_r(secs, 3u * 16777216u + 5u * r24(&x), 5u * 16777216u);
@@ -691,7 +740,7 @@ static uint32_t glide_all(dg_track *t, const int8_t *mv_v, const int32_t *mv_n, 
         gs[k] = g;
         vps[k] = vp;
         nvs[k] = nv;
-        d0 = note * C16 - v->tgt;                   /* (push's test: a voice that stays where it is lands nowhere) */
+        d0 = note * C16 + dg_tune_off(t, i, note) - v->tgt;                   /* (push's test: a voice that stays where it is lands nowhere) */
         if ((d0 > 32768 || d0 < -32768 || nv) && delays[i] + g > last)
             last = delays[i] + g;
     }
@@ -763,7 +812,8 @@ void dg_init(dg_track *t, uint32_t tempo_word, uint32_t pattern)
     }
     t->p.key = 0; t->p.scl = 1; t->p.voic = 64; t->p.pos = 64; t->p.vcnt = 5; t->p.bass = 1; t->p.sprd = 77;
     t->p.move = 0; t->p.glid = 5; t->p.path = 0; t->p.time = 0; t->p.ordr = 0; t->p.stag = 0; t->p.drft = 8;
-    t->p.vib = 4; t->p.scrb = 127;
+    t->p.vib = 4; t->p.scrb = 127; t->p.tune = 0; t->p.fan = 0;
+    t->nfan = 0;
     t->tempo = tempo_word;
     t->pattern = pattern;
     t->b = 0;
@@ -800,6 +850,7 @@ void dg_trig(dg_track *t, int32_t step, const dg_params *p, uint32_t cw)
     t->p.vcnt = p->vcnt; t->p.bass = p->bass; t->p.sprd = p->sprd; t->p.move = p->move; /* copy becomes memcpy */
     t->p.glid = p->glid; t->p.path = p->path; t->p.time = p->time; t->p.ordr = p->ordr;
     t->p.stag = p->stag; t->p.drft = p->drft; t->p.vib = p->vib; t->p.scrb = p->scrb;
+    t->p.tune = p->tune; t->p.fan = p->fan;
     t->key = imod12(p->key);
     if (root < DG_ROOT_LO)
         root = DG_ROOT_LO;
@@ -813,6 +864,7 @@ void dg_trig(dg_track *t, int32_t step, const dg_params *p, uint32_t cw)
         was |= (uint32_t)t->v[i].started << i;
     t->scrb_t = (int32_t)muldiv(p->scrb, ONE30, 127);
     layout(p, &n, &sub);
+    t->nfan = n;
     if (p->bass >= 4) {                             /* BASS Solo: the bass voice alone, the chord muted */
         uint32_t tsh = (glid_q(t, p, 12) >> 12) * 4 + 64 < 65536 ? 16 : 12;
         for (i = 0; i < DG_NV; i++)
@@ -912,10 +964,12 @@ uint32_t dg_block(dg_track *t, int32_t out_c16[DG_NV])
     uint32_t mask = 0;
     int i;
     int32_t d = t->scrb_t - t->scrb;
-    t->scrb += mulsh(d, K_SCRB, 30);
-    d = t->scrb_t - t->scrb;
-    if (d < 1074 && d > -1074)
-        t->scrb = t->scrb_t;
+    if (d) {                                            /* (build 33: at rest nothing to work out) */
+        t->scrb += mulsh(d, K_SCRB, 30);
+        d = t->scrb_t - t->scrb;
+        if (d < 1074 && d > -1074)
+            t->scrb = t->scrb_t;
+    }
     for (i = 0; i < DG_NV; i++) {
         dg_voice *v = &t->v[i];
         if (!v->started) {
@@ -955,7 +1009,7 @@ uint32_t dg_block(dg_track *t, int32_t out_c16[DG_NV])
             v->dr += (v->dr_t - v->dr) / 2250;
         }
         v->ph += v->inc;
-        out_c16[i] = v->cur + (v->dr >> 8) + mulsh(v->vib * 65536, sin_cyc(v->ph), 29);
+        out_c16[i] = v->cur + (v->dr >> 8) + vib_term(v->vib, v->ph);
         mask |= 1u << i;
         if (v->on)
             mask |= 1u << (8 + i);
@@ -963,3 +1017,5 @@ uint32_t dg_block(dg_track *t, int32_t out_c16[DG_NV])
     t->b++;
     return mask;
 }
+
+int32_t dg_sin29(uint32_t ph) { return sin_cyc(ph); }     /* build 23: BLOOM's breathing (digiglide.c) */

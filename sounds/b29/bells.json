@@ -1,0 +1,112 @@
+{
+ "name": "IRON BELLS",
+ "machine": "FM TONE",
+ "character": "High FM, the operators at the fifth (A 1.5), the octave (B1 2) and the twelfth (B2 3), each a little off; bright, the brightness falling to a held level.",
+ "changed_from_init": {
+  "Amp ATK (Attack Time, slot 81)": {
+   "knob": 4,
+   "fine": 0,
+   "stored": "0x0400",
+   "default": "0x0800"
+  },
+  "Amp DEC (Decay Time, slot 83)": {
+   "knob": 110,
+   "fine": 0,
+   "stored": "0x6e00",
+   "default": "0x2000"
+  },
+  "Amp REL (Release Time, slot 85)": {
+   "knob": 98,
+   "fine": 0,
+   "stored": "0x6200",
+   "default": "0x1800"
+  },
+  "FX REV (Reverb Send, slot 87)": {
+   "knob": 55,
+   "fine": 0,
+   "stored": "0x3700",
+   "default": "0x0000"
+  },
+  "SYN RTOA (Ratio A, slot 27)": {
+   "knob": 5,
+   "fine": 0,
+   "stored": "0x0500",
+   "default": "0x0300"
+  },
+  "SYN RTOB (Ratio B, slot 28)": {
+   "knob": 0,
+   "fine": 162,
+   "stored": "0x00a2",
+   "default": "0x0078"
+  },
+  "SYN FDBK (Feedback, slot 31)": {
+   "knob": 14,
+   "fine": 0,
+   "stored": "0x0e00",
+   "default": "0x0000"
+  },
+  "SYN MIX (Mix, slot 32)": {
+   "knob": 36,
+   "fine": 0,
+   "stored": "0x2400",
+   "default": "0x0000"
+  },
+  "SYN AOFF (Ratio A Offset, slot 59)": {
+   "knob": 64,
+   "fine": 49,
+   "stored": "0x4031",
+   "default": "0x4000"
+  },
+  "SYN B1OF (Ratio B1 Offset, slot 60)": {
+   "knob": 63,
+   "fine": 223,
+   "stored": "0x3fdf",
+   "default": "0x4000"
+  },
+  "SYN B2OF (Ratio B2 Offset, slot 61)": {
+   "knob": 64,
+   "fine": 66,
+   "stored": "0x4042",
+   "default": "0x4000"
+  },
+  "SYN DEC (A Env Decay, slot 36)": {
+   "knob": 92,
+   "fine": 0,
+   "stored": "0x5c00",
+   "default": "0x2000"
+  },
+  "SYN END (A Env End, slot 37)": {
+   "knob": 60,
+   "fine": 0,
+   "stored": "0x3c00",
+   "default": "0x7f00"
+  },
+  "SYN LEV (A Level, slot 38)": {
+   "knob": 74,
+   "fine": 0,
+   "stored": "0x4a00",
+   "default": "0x0000"
+  },
+  "SYN DEC (B Env Decay, slot 40)": {
+   "knob": 84,
+   "fine": 0,
+   "stored": "0x5400",
+   "default": "0x2000"
+  },
+  "SYN END (B Env End, slot 41)": {
+   "knob": 48,
+   "fine": 0,
+   "stored": "0x3000",
+   "default": "0x7f00"
+  },
+  "SYN LEV (B Level, slot 42)": {
+   "knob": 52,
+   "fine": 0,
+   "stored": "0x3400",
+   "default": "0x0000"
+  }
+ },
+ "couple": "AB LEVEL (LVAB, FM TONE page 4): up for more FM between the operators, down to the centre for the sound as saved, below about -16 for none. Up: clangorous. Down: a soft organ bell.",
+ "lfo": null,
+ "digiglide": "VCNT 4, GLID 1/2, HOLD on, DRFT 20, VIB 4, TYPE MAJ, EXT 6+9, VOIC 100"
+}

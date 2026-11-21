@@ -7,7 +7,7 @@ from osver import A
 IMG = os.path.expanduser('~/dn2-workspace/build/DN2_1.12_DIGIGLIDE_16.syx')
 s = Session(IMG, tag='held17', solo=True, reserve=0)
 k = s.k; h = k.h
-h.out = '/private/tmp/claude-503/-Users-mikem1-Downloads/54f10118-8f03-4039-bd92-53c6b1b3953b/scratchpad'
+h.out = '/tmp/digiglide'
 h.frames(3200)
 T = 1
 print('track 2 selected', s.select_track(T))

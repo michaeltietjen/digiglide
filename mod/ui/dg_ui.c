@@ -1,4 +1,4 @@
-/* DigiGlide's three SYN pages (CHORD, MOTION, SETUP) on every synth track: the value formatters of its 18 parameter records
+/* DigiGlide's SYN pages (CHORD, MOTION, SETUP, and build 29's TUNE) on every synth track: the value formatters of its 18 parameter records
  * and the test the page hooks ask ("is the active track a DigiGlide track?"). The records, the page descriptors and
  * the relocated parameter table are generated at build time (build_dg.py, ptable.S); the hooks are in hooks_ui.S.
  *
@@ -43,9 +43,9 @@ int dg_ui_active(uint32_t type)
  * filter envelope (naturarum/dn2-cfw docs/parameter-table-growth.md 5.1, rule 5). Row: +0 flags (a lock needs bits 0
  * and 3 clear), +0x24 the randomiser's std::function (16 bytes; 61 stock rows have none). Rebuilt on every call:
  * the stock rows are built at boot, after the first readers run. */
-#define DG_LOCK_ROWS 0x103Bu                             /* TYPE EXT VOIC POS GLID MOVE */
+#define DG_LOCK_ROWS 0x300103Bu                          /* TYPE EXT VOIC POS GLID MOVE, TUNE FAN (build 29) */
 extern const uint32_t dg_rows[];
-static uint32_t rowbuf[18][17];
+static uint32_t rowbuf[26][17];
 uint32_t dg_row(uint32_t k)
 {
     const uint32_t *s = (const uint32_t *)dg_rows[k];
@@ -93,7 +93,7 @@ static void pick(char *buf, int32_t i, const char *const *names, int32_t n)
     put(buf, names[i]);
 }
 
-static const char *const TYPE[] = {"MAJ", "MIN", "SUS", "DIM"};
+static const char *const TYPE[] = {"MAJ", "MIN", "SUS", "DIM", "5TH"};
 static const char *const EXT[] = {"NONE", "6", "7", "MAJ7", "9", "6+9", "7+9", "M7+9"};
 static const char *const NOTE[] = {"C", "C#", "D", "EB", "E", "F", "F#", "G", "AB", "A", "BB", "B"};
 static const char *const BASS[] = {"OFF", "FL-2", "FL-1", "FOL", "SL-2", "SL-1", "SOLO"};
@@ -101,14 +101,15 @@ static const char *const MOVE[] = {"NONE", "BLOM", "CAS+", "CAS-", "SPRL", "SWOP
                                    "EVOL"};
 static const char *const GLID[] = {"0", "1/16", "1/8", "1/4", "1/2", "1", "2", "4", "8", "16", "15s", "30s", "60s"};
 static const char *const PATH[] = {"SMTH", "LIN", "EASE", "SWEL", "BNCE", "LATE", "SNAP", "WOBL", "SEMI", "SCAL"};
-static const char *const TIME[] = {"TOGR", "DIST", "BLAG", "BLED", "LOOS"};
+static const char *const TIME[] = {"TOGR", "DIST", "BLAG", "BLED", "LOOS", "DRON"};
 static const char *const ORDR[] = {"TOGR", "LOW", "HIGH", "OUTI", "RAND"};
 static const char *const STAG[] = {"0", "0.5", "1", "2", "3", "5", "8"};
 static const char *const ONOFF[] = {"OFF", "ON"};
+static const char *const PLAY[] = {"CHRD", "STRM", "STRU", "HARP"};    /* digiglide.c PM_ order (build 19) */
 
 /* every value goes through dg_knob: a stored value outside the parameter's range shows (and plays) as its default.
  * Parameter numbers are digiglide.c's K_ order (the pages' order). */
-void dg_fmt_type(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 0), TYPE, 4); }
+void dg_fmt_type(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 0), TYPE, 5); }
 void dg_fmt_ext(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 1), EXT, 8); }
 void dg_fmt_key(int32_t raw, char *buf)                 /* OFF, C..B (major), Cm..Bm (minor) */
 {
@@ -125,10 +126,10 @@ void dg_fmt_key(int32_t raw, char *buf)                 /* OFF, C..B (major), Cm
 void dg_fmt_voic(int32_t raw, char *buf) { num(buf, dg_knob(raw, 3)); }
 void dg_fmt_pos(int32_t raw, char *buf) { num(buf, (int32_t)dg_knob(raw, 4) - 64); }
 void dg_fmt_glid(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 5), GLID, 13); }
-void dg_fmt_play(int32_t raw, char *buf) { (void)raw; put(buf, "CHRD"); }
+void dg_fmt_play(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 6), PLAY, 4); }
 void dg_fmt_hold(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 7), ONOFF, 2); }
 void dg_fmt_path(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 8), PATH, 10); }
-void dg_fmt_time(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 9), TIME, 5); }
+void dg_fmt_time(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 9), TIME, 6); }
 void dg_fmt_ordr(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 10), ORDR, 5); }
 void dg_fmt_stag(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 11), STAG, 7); }
 void dg_fmt_move(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 12), MOVE, 10); }
@@ -144,6 +145,35 @@ void dg_fmt_vcnt(int32_t raw, char *buf)
         put(buf, "OFF");
 }
 void dg_fmt_bass(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 17), BASS, 7); }
+/* SPD (build 21): the gap between a strum's strings, or a harp run's notes when the track's PLAY is HARP, in ms */
+uint32_t dg_pm_gap(uint32_t base, uint32_t spd);
+int32_t dg_view(uint32_t t, uint32_t k);
+void dg_fmt_spd(int32_t raw, char *buf)
+{
+    int32_t t = active_track();
+    int harp = t >= 0 && dg_knob(dg_view((uint32_t)t, 6), 6) == 3;
+    uint32_t ms = (dg_pm_gap(harp ? 51 : 20, dg_knob(raw, 18)) * 2 + 1) / 3;   /* blocks are 1/1.5 ms */
+    num(buf, (int32_t)ms);
+    if (ms < 100) {
+        while (*buf)
+            buf++;
+        put(buf, "ms");
+    }
+}
+
+/* build 23: the bass pattern, its grid, BLOOM (centre 0), the restrike (beats) */
+static const char *const BPAT[] = {"HOLD", "PULS", "OCT", "WALK", "R-5", "ARP", "OFFB", "332"};
+static const char *const BRATE[] = {"1/4", "1/8", "1/16"};
+static const char *const STRK[] = {"OFF", "1", "2", "4"};
+void dg_fmt_bpat(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 19), BPAT, 8); }
+void dg_fmt_brate(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 20), BRATE, 3); }
+void dg_fmt_bloom(int32_t raw, char *buf) { num(buf, (int32_t)dg_knob(raw, 21) - 64); }
+void dg_fmt_strk(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 22), STRK, 4); }
+void dg_fmt_bal(int32_t raw, char *buf) { num(buf, (int32_t)dg_knob(raw, 23) - 64); }   /* build 24 */
+/* build 29: TUNE (equal tempered, or chord notes at exact ratios above the root) and FAN */
+static const char *const TUNE[] = {"EQL", "PURE"};
+void dg_fmt_tune(int32_t raw, char *buf) { pick(buf, dg_knob(raw, 24), TUNE, 2); }
+void dg_fmt_fan(int32_t raw, char *buf) { num(buf, dg_knob(raw, 25)); }
 
 /* ---------------------------------------------------------------- the page itself
  * The stock knob rows draw a value with their own pictures and texts (MOD's glyphs, MULT's "BPM n"), not with a
@@ -166,12 +196,18 @@ static void *method(void *obj, int offset)
 }
 
 typedef void (*fmt_fn)(int32_t, char *);
-#define NP 18                                           /* CHORD 0..7, MOTION 8..15, SETUP 16..17 */
+#define NP 26                                           /* CHORD 0..7, MOTION 8..15, SETUP 16..23, TUNE 24, 25 */
 static const fmt_fn FMT[NP] = {dg_fmt_type, dg_fmt_ext, dg_fmt_key, dg_fmt_voic, dg_fmt_pos, dg_fmt_glid,
                                dg_fmt_play, dg_fmt_hold, dg_fmt_path, dg_fmt_time, dg_fmt_ordr, dg_fmt_stag,
-                               dg_fmt_move, dg_fmt_drft, dg_fmt_vib, dg_fmt_scrb, dg_fmt_vcnt, dg_fmt_bass};
+                               dg_fmt_move, dg_fmt_drft, dg_fmt_vib, dg_fmt_scrb, dg_fmt_vcnt, dg_fmt_bass,
+                               dg_fmt_spd, dg_fmt_bpat, dg_fmt_brate, dg_fmt_bloom, dg_fmt_strk, dg_fmt_bal,
+                               dg_fmt_tune, dg_fmt_fan};
 static const char *const LABEL[NP] = {"TYPE", "EXT", "KEY", "VOIC", "POS", "GLID", "PLAY", "HOLD",
-                                      "PATH", "TIME", "ORDR", "STAG", "MOVE", "DRFT", "VIB", "SCRB", "VCNT", "BASS"};
+                                      "PATH", "TIME", "ORDR", "STAG", "MOVE", "DRFT", "VIB", "SCRB", "VCNT", "BASS",
+                                      "SPD", "BPAT", "BRAT", "BLOM", "STRK", "BAL", "TUNE", "FAN"};
+/* the parameter in each cell of a page (-1: empty): SETUP (build 24) is VCNT BASS BPAT BRATE / SPD BLOOM STRK BAL */
+static const int8_t CELL[4][8] = {{0, 1, 2, 3, 4, 5, 6, 7}, {8, 9, 10, 11, 12, 13, 14, 15},
+                                  {16, 17, 19, 20, 18, 21, 22, 23}, {24, 25, -1, -1, -1, -1, -1, -1}};
 #define VALUE_Y_TOP 39
 #define LABEL_Y_TOP 29
 #define VALUE_Y_BOT 12
@@ -195,11 +231,11 @@ static void draw_page(void *view, void *canvas, uint32_t track, int dg_page, int
 {
     int i;
     for (i = 0; i < 8; i++) {
-        int k = dg_page * 8 + i, top = i < 4, cx = 24 + 26 * (i & 3) + 13;
+        int k = CELL[dg_page][i], top = i < 4, cx = 24 + 26 * (i & 3) + 13;
         int vy = top ? VALUE_Y_TOP : VALUE_Y_BOT, ly = top ? LABEL_Y_TOP : LABEL_Y_BOT;
         char buf[12];
-        if (k >= NP)
-            continue;                                   /* SETUP's empty cells */
+        if (k < 0)
+            continue;                                   /* SETUP's empty cell */
         FMT[k](dg_view(track, (uint32_t)k), buf);
         TEXT(canvas, FONT, cx, vy, CENTRED, "%.4s", buf);
         if ((dg_view_locks >> k) & 1)                   /* locked on the held step: inverted, as stock */
@@ -207,15 +243,6 @@ static void draw_page(void *view, void *canvas, uint32_t track, int dg_page, int
         TEXT(canvas, FONT, cx, ly, CENTRED, "%s", LABEL[k]);
     }
     dg_ui_locks = dg_view_locks;
-    if (dg_page == 2) {                                 /* SETUP's lower row: which tracks have DigiGlide on, 1..16 */
-        uint32_t m = dg_on_mask(), t;                   /* (a track's last digit where it is on, a dot where not) */
-        char map[17];
-        for (t = 0; t < 16; t++)
-            map[t] = (m >> t) & 1 ? (char)('0' + (t + 1) % 10) : '.';
-        map[16] = 0;
-        TEXT(canvas, FONT, 76, VALUE_Y_BOT, CENTRED, "%s", map);
-        TEXT(canvas, FONT, 76, LABEL_Y_BOT, CENTRED, "%s", "ON: TRACKS 1-16");
-    }
     ((void (*)(void *, void *, int))method(view, 184))(view, canvas, 0);   /* the level meter */
     if (pages > 1)
         PAGE_DOTS(view, canvas, pages, page, 7);
@@ -227,7 +254,7 @@ static int dg_page_shown;                               /* a DigiGlide page was 
 static int dg_page_prev;                                /* ... in the last finished pass */
 int dg_ui_on_page(void) { return dg_page_prev || dg_page_shown; }
 
-int dg_ui_shown_page(void)                              /* the DigiGlide page on screen in this pass (0..2), or -1 */
+int dg_ui_shown_page(void)                              /* the DigiGlide page on screen in this pass (0..3), or -1 */
 {
     return dg_page_shown && dg_ui_page >= dg_ui_first ? dg_ui_page - dg_ui_first : -1;
 }
@@ -242,7 +269,7 @@ int dg_syn_draw(void *view, void *canvas)
         return 0;
     first = PAGE_TABLE[4 * dg_mach((uint32_t)t)];
     dg_ui_first = first;
-    if (page < first || page >= first + 3)
+    if (page < first || page >= first + 4)
         return 0;
     dg_ui_sync((uint32_t)t);                            /* a knob turned since the last pass shows now */
     draw_page(view, canvas, (uint32_t)t, page - first, page, PAGE_COUNT(view));
@@ -262,16 +289,27 @@ void dg_overlay(volatile uint8_t *screen, void *canvas)
     const char *text = dg_ui_step(screen, t < 0 ? 0xFF : (uint32_t)t);
     const char *d1 = dg_dbg_line(0, t < 0 ? 0 : (uint32_t)t);
     if (d1) {                                           /* the status box, at the bottom of the screen */
-        FILL(canvas, 0, 44, 127, 63, 0);
-        TEXT(canvas, FONT, 64, 46, CENTRED, "%s", d1);
-        TEXT(canvas, FONT, 64, 55, CENTRED, "%s", dg_dbg_line(1, 0));
+        FILL(canvas, 0, 35, 127, 63, 0);
+        TEXT(canvas, FONT, 64, 37, CENTRED, "%s", d1);
+        TEXT(canvas, FONT, 64, 46, CENTRED, "%s", dg_dbg_line(1, 0));
+        TEXT(canvas, FONT, 64, 55, CENTRED, "%s", dg_dbg_line(2, 0));     /* build 28: the hook's time */
     }
-    if (dg_page_shown && !d1) {                         /* on a DigiGlide page: the sounding chord, over the title */
-        const char *nm = dg_chord_name(t < 0 ? 0xFF : (uint32_t)t);
-        if (nm) {
-            FILL(canvas, 19, 53, 127, 63, 0);
-            TEXT(canvas, FONT, 73, 55, CENTRED, "%s", nm);
-        }
+    if (dg_page_shown && !d1 && t >= 0) {               /* on a DigiGlide page: the sounding chord and the PLAY */
+        static const char *const MODE[4] = {"CHORD", "STRUM DN", "STRUM UP", "HARP"};   /* mode, over the title */
+        const char *nm = dg_chord_name((uint32_t)t);
+        const char *md = MODE[dg_knob(dg_view((uint32_t)t, 6), 6) & 3];
+        FILL(canvas, 19, 53, 127, 63, 0);
+        if (dg_ui_shown_page() == 2) {                  /* SETUP (build 23): which tracks have DigiGlide on, 1..16 */
+            uint32_t m = dg_on_mask(), u;               /* (a track's last digit where it is on, a dot where not) */
+            char map[17];
+            for (u = 0; u < 16; u++)
+                map[u] = (m >> u) & 1 ? (char)('0' + (u + 1) % 10) : '.';
+            map[16] = 0;
+            TEXT(canvas, FONT, 73, 55, CENTRED, "ON %s", map);
+        } else if (nm)
+            TEXT(canvas, FONT, 73, 55, CENTRED, "%s  %s", nm, md);
+        else
+            TEXT(canvas, FONT, 73, 55, CENTRED, "PLAY: %s", md);
     }
     dg_page_prev = dg_page_shown;
     dg_page_shown = 0;

@@ -90,8 +90,8 @@ have, base = voices_of(s, 0)
 got = {f: k.slot(0, sl) >> 8 for f, sl in zip(FIELDS, SLOTS) if f != 'vcnt'}
 want = {f: slot_code(f, v) for f, v in Ui().items() if f != 'vcnt'}
 check(have == 5 and base == 0, f'A: VCNT 5 on a track never set up: VOICES raised to {have} (voices {base}..{base + have - 1})')
-check(not any(pad0) and bytes(k.h.r(s.store(), 4)) == b'DGK1',
-      'A: the kit record\'s spare bytes were all zero before, and hold the store ("DGK1") after the first setting')
+check(not any(pad0) and bytes(k.h.r(s.store(), 4)) == b'DGK2',
+      'A: the kit record\'s spare bytes were all zero before, and hold the store ("DGK2") after the first setting')
 check(got == want, 'A: every parameter has its default'
                    + ('' if got == want else f' DIFFER {[(f, got[f], want[f]) for f in got if got[f] != want[f]]}'))
 ui = Ui(voic=64, glid=3, drft=0, vib=0)                           # GLID 1/4 bar: each glide is done before the next key
