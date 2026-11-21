@@ -25,4 +25,4 @@ fr = s.play(1500, bpm=120)
 ons = [(i, hex(U16(f, 0x22))) for i, f in enumerate(fr) if U16(f, 0x22)]
 offs = [(i, hex(U16(f, 0x24))) for i, f in enumerate(fr) if U16(f, 0x24)]
 print(f'RES {tag:12s} ons {ons} offs {offs}')
-pickle.dump([bytes(fr[300]), bytes(fr[400]), bytes(fr[1200])], open(os.path.expanduser(f'/private/tmp/claude-503/-Users-mikem1-Downloads/54f10118-8f03-4039-bd92-53c6b1b3953b/scratchpad/tv/mu_{tag}.pkl'), 'wb'))
+pickle.dump([bytes(fr[300]), bytes(fr[400]), bytes(fr[1200])], open(os.path.expanduser(f'/tmp/digiglide/tv/mu_{tag}.pkl'), 'wb'))

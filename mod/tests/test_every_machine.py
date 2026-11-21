@@ -104,20 +104,20 @@ for _ in range(9):
     k.tap('SYN')
     seen.append(s.drawn_page())
 first = struct.unpack('>i', bytes(h.r(s.sym['dg_ui_first'], 4)))[0]
-check(first == 4 and {4, 5, 6} <= set(seen) and max(seen) == 6, f'B: [SYN] reaches DigiGlide\'s three pages after FM TONE\'s four (first {first}, pages drawn {seen})')
+check(first == 4 and {4, 5, 6} <= set(seen) and max(seen) in (6, 7), f'B: [SYN] reaches DigiGlide\'s pages (three; four from image 29) after FM TONE\'s four (first {first}, pages drawn {seen})')
 for page, name in ((4, 'chord'), (5, 'motion'), (6, 'setup'), (0, 'own')):
     s.syn_page(page)
     h.png(f'fmtone_page_{name}.png')
 s.syn_page(4)
 kit0 = bytes(h.r(h.u32(A(0x800052A0)), 0x5d71))
 for burst in (11, 11, 7):
-    if h.turn_to(0, lambda: k.slot(T, 50) >> 8, 3, burst=burst, tries=80):
+    if h.turn_to(0, lambda: k.slot(T, 50) >> 8, 4, burst=burst, tries=80):
         break
 h.frames(300); h.run(400_000_000)
 kit1 = bytes(h.r(h.u32(A(0x800052A0)), 0x5d71))
 diff = [i for i in range(len(kit0)) if kit0[i] != kit1[i]]
 buf = 0x48e4 + 2 * 70
-check(k.slot(T, 50) == 3 << 8, f'B: knob A on CHORD turns TYPE in the store: {k.slot(T, 50):#06x} (DIM)')
+check(k.slot(T, 50) == 4 << 8, f'B: knob A on CHORD turns TYPE in the store: {k.slot(T, 50):#06x} (5TH)')
 check(diff and set(diff) <= {buf, buf + 1}, f'B: in the live kit only the buffer word changed (bytes {[hex(x) for x in diff[:6]]}): the FM TONE sound is untouched')
 h.png('fmtone_page_chord_dim.png')
 if 'dg_row' in s.sym:                                    # (image 17: six rows are lockable, test_b17_locks.py)
@@ -137,11 +137,14 @@ check(v_on == 5 and p_off == 0 and v_off == 0 and v_back == 5,
       f'I: [FUNC] + push E on the FM TONE track: 5 voices reserved -> OFF hands them back ({v_off}) -> on again reserves {v_back}')
 s.select_track(0)
 k.tap('SYN'); h.frames(300)
-check(k.slot(0, 50) == 0 and k.slot(T, 50) == 3 << 8, f'B: back on track 1 its own TYPE shows ({k.slot(0, 50):#06x}); track 2 keeps {k.slot(T, 50):#06x}')
+check(k.slot(0, 50) == 0 and k.slot(T, 50) == 4 << 8, f'B: back on track 1 its own TYPE shows ({k.slot(0, 50):#06x}); track 2 keeps {k.slot(T, 50):#06x}')
 
 # ---------------------------------------------------------------- C
 s = Session(img, tag='em_c', solo=True, reserve=0)
-s.k.h.frames(3200)
+# (3000, not 3200: on images 25 to 27 the stop at 3200 left the emulated sequencer playing nothing at all, stock
+# notes included, so no trig reached DigiGlide; 3000 and image 24 at 3200 play. A harness stop point, not firmware:
+# notes/build_log.md, image 25.)
+s.k.h.frames(3000)
 s.set_sound(Ui(vcnt=5, key=7, glid=3, hold=1, drft=0, vib=0))
 settle(s)
 progression(s, 0)                                        # (it plays chords, then the sound is changed under it)
@@ -194,9 +197,12 @@ for st in range(128):
     s2.k.call(A(0x40054690), [s2.ctx0 + 132, st, 1, 0])
 s2.trig(0, note=60, t=1); s2.trig(8, note=62, t=1)
 s2.lock(8, t=1, type=1)                                  # on FM TONE slot 50 is the machine's own parameter
-names = []
 nm2 = lambda: bytes(s2.k.h.r(s2.sym['dg_name'], 16)).split(b'\0')[0].decode()
-s2.play(2 * 1500 + 300, bpm=120, each=lambda i: names.append(nm2()))
+for _ in range(3):                                       # (a [PLAY] press the emulated panel dropped: play again)
+    names = []
+    s2.play(2 * 1500 + 300, bpm=120, each=lambda i: names.append(nm2()))
+    if any(names):
+        break
 seq = [n for i, n in enumerate(names) if n and (i == 0 or names[i - 1] != n)]
 check(seq == ['C MAJ', 'D MAJ'], f'F: on an FM TONE track that lane is the machine\'s: not read as a DigiGlide lock ({seq})')
 

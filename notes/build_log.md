@@ -858,3 +858,440 @@ No change to how DigiGlide plays: the three "adopt now" items from the reading o
 - Test: `mod/tests/test_b18_arp_level.py` (8 checks: SPEED 10 and 19, a chord every 4 steps; same notes and
   blocks as stock, voice records equal, every note within 1 dB).
 - Not done: the unit's own case (sound and settings unknown), SPEED above 19, modes other than UP.
+
+## Image 19: PLAY modes Strum and Harp (2026-11-14), sha256 82e7d39a…b192
+
+- Owner: "arp isn't working. it kind of plays. Let's work on harp and strum". Chosen with the owner: Harp is a PLAY
+  mode on DigiGlide's own voices (not a ninth arp MODE); Strum is one stroke per chord, the trigs set the rhythm.
+- PLAY (CHORD page, knob G, per track in the kit store) now has 4 values: CHRD, STRM, STRU, HARP. `pm_block` in
+  `mod/digiglide.c` runs once per block before the output loop; it holds back the attack note-ons it has scheduled
+  (`PM.wait`) and fires them when due.
+  - **STRM / STRU:** when 2 or more voices attack in one block, they start one after the other ordered by target
+    pitch, low to high (STRU high to low), 20 blocks (13 ms) apart.
+  - **HARP:** on each new chord (trig or revoice), a run up through the chord's pitch classes from the lowest chord
+    voice for 3 octaves, 51 blocks (34 ms) a note, round the chord voices. With BASS on the bass voice is left out
+    of the run and struck with its first note. A harp note is the voice's glide pitch moved to the run's note
+    (drift and vibrato kept). Notes hold to the trig's end. POS moves the run's start (a POS lock too).
+- Arp ("gaps or goes silent"): in the emulator DigiGlide's arp timing equals stock's in every case tried; gaps follow
+  the trig length, and finite trigs go quiet on later loops on stock as well (emulator artifact not ruled out). No
+  DigiGlide fault found. For the owner: compare with a VCNT OFF track with the same trigs, and try a longer trig LEN.
+- Tests: `mod/tests/test_b19_play.py` OK (12 checks: CHRD one block; STRM 20 apart, low to high, second trig too;
+  STRU; HARP bass with the first note, 13 notes 51 apart through C MIN7, 3 chord voices, D MIN7 on the second trig,
+  no early note-off; POS lock 100 raises the run's start 48 -> 57). Regressions OK: test_off_is_stock, test_b18_arp,
+  test_rev5, test_b17_locks, test_every_machine, test_rev5_record, test_rev5_trigs.
+- No runtime helpers linked, preflight 22/22. Not flashed.
+- Not done: Slop and Pattern; HARP direction, rate and span as settings (fixed at up, 34 ms, 3 octaves); strum and
+  harp on the unit.
+
+## Image 20: PLAY knob fix, mode in the header (2026-11-14), sha256 4c8371f4…8d42
+
+- Owner, image 19 on the unit: STRM and HARP did nothing. Cause: `dg_ui_sync` puts back any knob value above
+  `PTOP`, and `PTOP[K_PLAY]` was still 0, so knob G always returned to CHRD. Build 19's tests set PLAY in the store
+  directly and missed it. Fixed (`PTOP` 3).
+- Every DigiGlide page's header names the PLAY mode: "PLAY: CHORD / STRUM DN / STRUM UP / HARP" with no chord
+  sounding, "<chord>  <mode>" while one sounds.
+- `experiments/b20_play_knob.py`: the knob's edit buffer word 1, 2, 3, 0 reaches the track's PLAY and STRM strums
+  (image 19: FAIL, image 20: OK); screenshots in `experiments/out/b20/`.
+- Regressions OK: test_b19_play, test_off_is_stock, test_b18_arp, test_b17_locks, test_every_machine, test_rev5,
+  test_rev5_record, test_rev5_trigs. (test_m4b_ui predates rev 5: it still uses DEG and SCL and fails on any build.)
+- Owner, unit: "VOICES SET TO 6" every loop of a chain whose patterns have different kits, and the sound cuts. Not
+  reproduced (one pattern looping: one setter call in 4 loops, `experiments/b20_voices_loop.py`). Likely each kit
+  load restores that kit's VOICES and DigiGlide raises it again. Workaround given: VOICES = VCNT in every kit of
+  the chain, project saved. Not fixed.
+- Not flashed by me.
+
+## Image 21: strums on every trig, SPD (2026-11-14), sha256 5be913e3…e831
+
+- Owner, image 20 on the unit: "strum up and down seem broken"; asked for a speed control for strums and harps.
+- Cause, found in the emulator (`experiments/b21_strum_real.py`, trigs C3 F3 G3 D3 on steps 1, 5, 9, 13):
+  - trigs that touch or overlap (length 60 or more here) are legato, so the engine glided into each new chord
+    unstruck: only a pattern's first chord was strummed;
+  - with HOLD on, each restrike strummed the previous chord's notes and then glided to the new one (the note word
+    is the voice's glide position).
+- Fix: in STRM and STRU every trig strikes, legato or held, at the new chord's notes (the trig takes GLID 0's
+  path: gates off, restrike, no glide). A chord setting turned while it sounds still glides (the re-voicing reads
+  GLID). A string waiting for its turn keeps ringing at its last note instead of jumping early. HARP unchanged
+  (it already ran on every trig).
+- SPD, SETUP knob C (`Strum Speed`, record 339, FX word k 88; stock's FX group records stop at slot 40):
+  0..127, 64 = the build 19 gaps (13 ms a string, 34 ms a harp note), x 2^((SPD - 64) / 24), so strum 2..82 ms
+  and harp 5..210 ms. The cell shows ms for the track's mode (harp gap with PLAY HARP, else strum). Read at each
+  trig, not p-lockable. Stored in 16 bytes after the 18 older settings (+0x29d3..+0x29e2 of the kit record, inside
+  the padding) as value + 1, so kits saved before image 21 read 64. The 18 older settings keep their place.
+- Tests: `mod/tests/test_b21_strum.py` OK (STRM and STRU with gaps, legato, HOLD on, GLID 0: each of 4 trigs gives 4
+  note-ons 20 blocks apart in pitch order, in its own chord; HARP legato runs on every trig).
+  `mod/tests/test_b21_spd.py` OK (STRM gaps 20, 3, 120 at SPD 64, 0, 127; HARP 144 at SPD 100; an old kit reads 64;
+  the SETUP knob's buffer word reaches SPD; screenshots in `experiments/out/b21/`). Regressions OK: test_b19_play,
+  test_off_is_stock, test_b18_arp, test_b17_locks, test_every_machine, test_rev5, test_rev5_record, test_rev5_trigs.
+- No runtime helpers linked, preflight 22/22. Not flashed by me.
+
+## Image 22: strummed strings are plucked (2026-11-15), sha256 f9053f82…0698
+
+- Owner, image 21 on the unit: STRM and STRU "don't work, they just hold notes over the top", with HOLD on.
+- Cause (`experiments/b22_hold_audio.py`, the OS's frames through the SHARC emulator, HOLD on, trigs C3 F3 G3 D3 on
+  steps 1, 5, 9, 13): with HOLD on no note-off is ever sent; each string's strum note-on lands on a voice that still
+  sounds, and every DigiGlide voice has AMP RSET off (build 12), so the envelope carried on: the strings changed
+  pitch one by one with no attack, the chord seemed to hold over the strum. Image 21's tests counted note-ons and
+  their pitches only, not the sound. The same holds for legato trigs and for HARP over a sounding voice.
+- Fix: a voice's turn in a strum or a harp run has RSET on (256) in its record for that block: the string restarts
+  from silence, a pluck. CHRD and the arp are unchanged (RSET off, a held chord's strike rises from its level).
+- Measured, AMP ATK 50 in every voice record: the level during a strum falls 11 to 17 dB below the held chord as the
+  strings restart (image 21: about 5 dB, the chord's own movement). With the test sound's fast attack the dip is
+  only a few ms long.
+- Tests: `mod/tests/test_b22_pluck.py` (HOLD on: STRM, STRU, HARP note-ons all RSET 256; CHRD all 0), plus the
+  image 21 suite: all OK (test_b22_pluck, test_b21_strum, test_b21_spd, test_b19_play, test_off_is_stock,
+  test_b18_arp, test_b17_locks, test_every_machine, test_rev5, test_rev5_record, test_rev5_trigs).
+- No runtime helpers linked, preflight 22/22. Not flashed by me.
+
+## Image 23: bass patterns and the drone (2026-11-15), sha256 ee85e2e3…df36
+
+- Owner's specs: bass patterns (BPAT, BRATE) and the drone (TYPE 5TH, TIME DRON, BLOOM, STRK, the drone presets).
+- SETUP page: A HOLD, B BASS, C BPAT, D BRAT, E SPD (moved from its old knob), F BLOM, G STRK. The header shows the
+  track map ("ON 1.3...").
+- Bass: BPAT HOLD PULS OCT WALK R-5 ARP OFFB 332 on the bass voice (BASS FOL or SOLO), grid from the tempo, BRAT
+  1/4 1/8 1/16, gates 80 % of a step, odd steps at 80 % level (OFFB all full), each note plucked (RSET 256). WALK's
+  fifth and ARP's third are the chord's own. A new root restarts at step 0, the same root goes on. Pattern notes play
+  the new root's own pitch, not the root's glide. BPAT HOLD is image 22's held bass. The release is the sound's REL.
+- Drone: TYPE 5TH (root and fifth). TIME DRON: voice i takes GLID x (1 + 0.25 i), scaled so the top voice lands at
+  GLID. BLOOM (centre 0): below thins the upper voices to the lowest alone, above breathes them between 25 % and
+  100 % on each voice's own phase. STRK OFF 1 2 4 beats restrikes a held chord (rises from its level).
+- Store: kit padding now "DGK2", 16 bytes a track; a "DGK1" kit reads as it was and is rewritten as DGK2 on its first
+  edit, keeping every setting. An older image reads a DGK2 kit as having no settings.
+- Locks: lane 0 has a new code (8192 + POS + 129 x (TYPE + 6 x EXT)), old words still read; new lane on sound slot 65
+  (BPAT + 9 x BLOOM), safe on every machine (`experiments/b23_slot65.py`).
+- Not built: BASS SOLO on a second track, BLOOM as an LFO destination.
+- Tests: `mod/tests/test_b23_bass.py`, `mod/tests/test_b23_drone.py`, plus the image 22 suite (lock words, the store
+  header and every_machine's knob steps updated for the new code, DGK2 and TYPE's fifth value): all OK.
+- No runtime helpers linked, preflight 22/22. Not flashed by me.
+
+## Image 24: bass balance (2026-11-16), sha256 5a53ab4a…9ae2
+
+- Owner's report: "bass is quiet" (one bass voice under four chord voices, and slow attacks were plucked from zero).
+- SETUP H BAL (-64..+63, centre 0, per track, not p-lockable). Up raises the bass to double and lowers the chord to
+  a quarter at +63; down fades the bass to silence at -64. Measured (`experiments/b24_bal_audio.py`): bass minus
+  chord -5.5 dB at 0, +5.2 dB at +32, +20.8 dB at +63.
+- Fix: levels were scaled from a voice DigiGlide had already scaled in the same block (double scaling). Each voice
+  now scales the source's level read before any voice is touched. This also affected image 23's BLOOM depth.
+- The pattern's 80 % accent is applied after the 0x7F00 cap, so it survives a boosted bass.
+- Slow attack: with the sound's AMP ATK at 32 or more, pattern notes rise from the bass's current level instead of
+  being plucked (no RSET).
+- Store: DGK2 grows by a 16-byte BAL row (stored value + 1, so an image 23 kit reads BAL 0).
+- Tests: `mod/tests/test_b24_bal.py` (A-F), plus the image 23 suite: all OK.
+- No runtime helpers linked, preflight 22/22. Not flashed by me.
+
+## Image 25: HOLD lets go when turned off (2026-11-16), sha256 2b758b5d…bd0c
+
+- Owner's report: "stuck on hold". A chord HOLD had latched kept sounding after HOLD was turned off (CHORD knob H
+  or [FUNC] + push H): only [STOP], the sequencer stopping, muting the track or playing the same chord again let it
+  go. Present since HOLD existed, not new in image 24.
+- Fix: while a chord is held, the track's HOLD is read every block; once it is off the chord is no longer kept and
+  releases at once, or when the last key or trig of it comes up.
+- Tests: `mod/tests/test_b25_hold.py` (A-D: image 24 fails A and B, image 25 passes all).
+- Harness (not firmware): image 25's boot snapshot stopped the main thread switched out inside the RTOS primitives
+  (0x400016D2 / 0x40001724 on its stack, the mutex malloc takes through 0x40001608). A `Kit.call` from there left the
+  UI at the throw site 0x4018B4A0 and no trig reached the frame, so `test_every_machine` failed A and C on image 25
+  only. Shown by a same-layout variant without the release that happened to snapshot elsewhere and passed, and by
+  DigiGlide's state (no trig seen, `DG.latched` never set, so the new line never ran). `dgkit.settle` now also
+  waits while the pc or a return address is in 0x40001500..0x40001900; image 25 then plays as image 24.
+- Full suite on image 25 after that: all pass except `test_every_machine` C, which also is the harness: its session
+  stops the UI at `h.frames(3200)`, and on image 25 that point leaves the sequencer playing nothing at all (no stock
+  note-on either, which the HOLD line cannot cause). The same part with 3000 frames takes all 4 chords on 5 voices
+  (0x1f); with 3400 it fails the same way. Image 24 passes at 3200. Test left as is; worth making its start robust.
+- DRONE PULSE (`experiments/b25_drone_pulse.py`): not verified. LFO1's values written to the sound (or through the
+  live-record call 0x4003F1AE, now in `port/addr_1.12.json`) do not reach the stock LFO in the emulator, and the
+  LFO page's knobs land on wrong values with DEST needing its list confirmed. Found on the way, from the firmware's
+  own value text: LFO1 = sound slots 1..8 (entries 75..83) SPD MULT FADE DEST WAVE SPH MODE DEP; SPD 0x6000 = 32.00;
+  MULT 1..2k at indexes 0..11 and again at 12..23; DEST is a sound slot (AMP VOL 90); DEP (v - 0x4000) / 128, so a
+  positive depth on a VOL at 127 is clipped away.
+
+## Image 26: "CHORD MODE ON?" once a track (2026-11-16), sha256 b16385ab…8cf7
+
+- Owner, image 25 on the unit: "chord mode on? keeps popping up". The message came with every block that brought
+  three or more notes (stock chord mode, a multi-note trig, a MIDI chord), again as soon as the last one had gone.
+- Fix: `dg_cmwarn` (bit t): shown once a track until power off. Nothing else changes.
+- Tests: `mod/tests/test_b26_cmwarn.py` (three keys in one panel message; image 25 fails A and B, image 26 passes).
+  The emulated panel drops every second key press here (HOLD on or off), so the test presses, releases and waits.
+- Harness, twice more (not firmware), both shown by moving the test's own timing:
+  - `test_every_machine` C: the stop at `h.frames(3200)` leaves the sequencer playing nothing on images 25, 26, 27
+    (3000 plays, all 4 chords on 5 voices). The test now uses 3000.
+  - `test_rev5_record` C: [STOP]'s release came 896 blocks after the key on image 25 and 907 on images 26 and 27;
+    the test watched for 900. It now watches for 1500.
+- Owner, the same day, image 25 on the unit (build read off [FUNC] + push G): "odd behaviors on glide", "arps on other
+  tracks overwhelmed", "notes being stolen from other tracks". One DigiGlide track, three drum tracks, one bass,
+  BASS off; the VOICE menu read as "10, 6 above it" (taken as 6 reserved on the DigiGlide track, 10 free: not
+  confirmed). Not reproduced, cause not found:
+  - `experiments/b26_other_arp.py`: a stock arp beside a DigiGlide track, images 21, 24, 25: the arp's 35 notes all
+    play, DigiGlide stays on its 5 voices, the three images alike.
+  - `experiments/b26_demo_steals.py`: the demo pattern, every track playing, VCNT OFF / 5 / 6: no note of another
+    track cut by a later one, images 21 and 25 alike. (The demo is too light to run 10 voices out.)
+  - `experiments/b26_two_dg_tracks.py`: two DigiGlide tracks at once do break it (the second plays single stock
+    notes, the others share 6 voices), but the owner has one.
+  - Every write of DigiGlide's frame hook stays inside DG.base .. DG.base + DG.nres (read, not measured).
+  - Asked for and not yet given: the VOICE menu per track, the two [FUNC] + push G lines while a note hangs.
+
+## Image 27: a strum damps the strings that still sound (2026-11-16), sha256 5f89ba9c…6060
+
+- Owner, image 25, all trigs, HOLD on: "strum down still doesn't work with chord hold on", "there's a ring going on
+  that's holding over". Not confirmed by the owner as this; built as its own image so 26 stays the plain one.
+- Measured on image 25 (`experiments/b26_strum_seq6.py`, `b26_strum_hold_keys.py`: 6 voices, BASS off, HOLD on):
+  every trig and every key strikes all 6 voices in the right order, 20 blocks apart, in its own chord. What is left
+  is build 21's rule: a string waiting for its turn keeps ringing at the last chord's note. With HOLD on (or legato
+  trigs) nothing is released, so the old chord sounds under the strum until each string's turn: on STRU the low
+  strings last (100 blocks at SPD 64 with 6 voices, up to 0.5 s at SPD 127).
+- Fix: in a strum (STRM, STRU) a string that still sounds and waits for its turn fades to level 0 in DAMP_BLOCKS
+  (6 blocks, 4 ms) and comes back at its note-on (plucked, RSET on, build 22). The first strum, CHRD, HARP, the
+  bass voice and the time between strums are unchanged.
+- Tests: `mod/tests/test_b27_damp.py` (A STRU and B STRM with HOLD on, C STRU legato: silent from 6 blocks after
+  the strum starts until the string's turn, back at its level at the note-on; D CHRD never drops; image 26 fails
+  A, B, C). Checked on frames (the level word), not listened to or rendered.
+- Found on the way: the level word of every voice rises from 0 over the first ~52 blocks after [PLAY]; image 21
+  does the same.
+
+## Dropouts on other tracks with DigiGlide on: measured (2026-11-16, images 21 to 26, no new image)
+
+- Owner (video, image 25, DigiGlide on track 13, VCNT 6, HOLD on): the pattern is complete with DigiGlide off (4:03)
+  and loses bass and rhythm with it on (1:25, 2:49). "DigiGlide must not make other tracks drop notes."
+- Voice pool, `experiments/b28_dropouts.py` (image 26, DigiGlide on track 13, kick / snare / 16th hats / overlapping
+  bass on tracks 1..4, 12,000 blocks): note-ons reaching the DSP are the same off and on (8 / 4 / 32 / 16), no note
+  cut by another track, DigiGlide on voices 0..5 only, the others on 6..15. Not the cause in the emulator.
+- Audio ISR, `experiments/b28_isr.py` (emulator instructions per audio block, same pattern): VCNT OFF median 55,135,
+  p99 55,364. VCNT 6: image 21 and 22 median 58,328, p99 63,235; 23: 59,551 / 68,092; 24: 59,516 / 68,607; 25:
+  59,822 / 68,913; 26: 59,861 / 68,951, max 77,624. So DigiGlide adds 4,700 a block (3,200 on image 21, 1,900 at M3)
+  and about 14,000 on one block in 38 (every 25 ms; 8,000 on image 21). The jump is image 23 (bass, drone, bloom).
+  VCNT 3 saves 1,800; DRFT and VIB at 0 save nothing; HOLD off saves 300.
+- Profile, `experiments/b28_profile.py` (mod code bytes run per ISR by function): dg_tx itself 73 %, umul + mulsh
+  11 %, dg_block 6 %; the 25 ms blocks add read_ui / par_at / st_get / dg_marked / dg_par / dg_lock_get (the
+  parameters read again in the ISR).
+- Budget on the unit: not measured. With the earlier estimates (stock ISR 64 % busy, mod code about 4x stock's cycles
+  per instruction) image 26 is about 86 % busy on every block and over 100 % on the 25 ms blocks; image 21 about 79 %
+  and about 100 %. That leaves the sequencer and arp tasks too little time: late and lost notes on every track.
+- Fix planned, not built: the slow work in dg_tx at a lower rate or on change only, the parameter read out of the
+  ISR, the hook's worst time from a hardware timer on the [FUNC] + push G lines, a suite test with a cost limit.
+
+## Image 28: DigiGlide's work moved off the frames that carry notes (2026-11-16), sha256 1b02c2a2…10a4
+
+- Cause (see the entry above): hook time on frames that carry note-ons. A late frame is dropped with every track's
+  note-ons.
+- Chord event deferred: the notes of a trig are noted in the hook and the chord is worked out on the first frame
+  with no outgoing note-on (at most DEFER_MAX 6 frames, then forced). In the test pattern the wait is 1 frame
+  (0.67 ms), never forced.
+- Parameters: one read per block in rotation instead of all 24 every 30 blocks; a full re-read only after a
+  change (or at a new step with locks), and never on a note frame. Live knob following is up to about 24 blocks
+  (16 ms) slower.
+- Cheaper steady path: clone_voice copies longs, bp_block returns early when BLOOM and BAL are at rest, the HOLD-off
+  check every 16 blocks.
+- Measured in the emulator (`experiments/b28_hook.py`, mod code bytes per frame, DigiGlide on track 13 VCNT 6 with
+  kick / snare / hats / bass): frames with note-ons max 66,160 (image 26) to 20,272; median 24,186 to 15,952; p99
+  41,568 to 20,292; the 30 block spike is gone. The largest frame, 53,046, is the deferred chord event on a quiet
+  frame. Instructions per audio ISR: median 59,861 to 57,910, p99 68,951 to 58,959.
+- Status box ([FUNC] + push G): third line "H### N### W## D#". H = longest hook time in microseconds, N = longest
+  on a frame with note-ons (a block is 667), W = events forced onto a note frame, D = longest wait in frames. The
+  time comes from DTIM3's counter (0xFC07C00C), read only while the box is on. The emulator does not model that
+  counter (reads H000 N000): unverified until read on the unit.
+- Suite: all 18 earlier tests pass unchanged. New `tests/test_b28_load.py`: cost limits on note frames in CHRD,
+  STRM, STRU, HARP (with a bass pattern), no forced event, other tracks 8 / 4 / 32 / 16 note-ons on voices 6..15,
+  DigiGlide on 0..5 only, pattern plays with the box on. Image 26 fails the cost limits.
+- Not done: dg_block and the voice loop (about 2,800 instructions a block) are not reduced. Not flashed; the real
+  load on the unit is unmeasured.
+- Preflight PASS (13 checks, integrity 22/22, signed, 1,917,384 bytes of the 2 MiB USB buffer), run again by hand on
+  2026-11-17. Full sha256 1b02c2a276194c2481a5d8307bfeb6433978d92a05d934ee20c7bf93f0f110a4.
+- Open: the glitch noise at 2:20 in the owner's video. The video's audio from 2:18.0 to 2:19.7 has no drum hits at
+  all (the same dropout), then an abrupt chord change at 2:19.7; no separate noise burst or sample jump stands out
+  above the drum hits. Not explained. Listen for it on image 28.
+- Open: the deferral waits for a frame with no note-ons, not for one with no note-offs. If the deferred chord
+  makes that frame late and a late frame is dropped whole, another track's note-off on it could be lost. Decide
+  from H on the unit (stock's ISR is estimated at 64 % of the 667 microsecond block, so about 240 is the ceiling).
+
+## Image 29: TUNE and FAN, and the DigiDrone sounds (2026-11-18)
+
+`~/dn2-workspace/build/DN2_1.12_DIGIGLIDE_29.syx`, sha256
+26253e12c8a064934cf088cc83c181e1ea934cfbaef37ee6e85f7c5b09afd186, preflight PASS, 1,917,586 bytes. Not flashed.
+
+- TUNE (EQL / PURE), parameter 24. PURE moves each chord note to an exact ratio above the chord root; the root stays
+  equal tempered. Table (`PURE16` in core/dg_core.c): 16/15, 9/8, 6/5, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 9/5, 15/8;
+  octaves are exact. The owner specified the thirds, fourth, fifth, sixths, sevenths; 16/15, 9/8 and 7/5 are
+  choices made here. Glides run between the tuned pitches. HARP notes are tuned too.
+- FAN (0 to 127), parameter 25. Spreads the chord voices evenly either side of pitch: at 127 the outer voices are
+  20 cents out, a four voice chord's inner ones a third of that. Added on top of DRFT. The bass voice is not fanned.
+- Page: a fourth DigiGlide page "TUNE" after CHORD, MOTION, SETUP (all full). Knob A TUNE, knob B FAN.
+- Store: TUNE at DGK2 +276+t, FAN at +292+t (value + 1); 308 of the 337 spare bytes used.
+- Locks: both on lane 65 with BPAT and BLOOM (word = BPAT + 9 BLOOM + 1161 (TUNE + 3 FAN)); words written by
+  image 28 read unchanged. The 15 bit word leaves FAN 8 lock levels: 0 18 36 54 73 91 109 127. The unlocked FAN
+  has all 128.
+- Changing TUNE or FAN on a sounding chord glides to the new pitches at GLID.
+- `tests/test_b29_tune.py`: PURE within 0.09 cent of the ratio over 40 chords (5 TYPE x 8 EXT; 8/5 occurs in no
+  chord type, so it is in the table but unplayed); EQL note words whole semitones; FAN on 3 to 6 voices; TUNE EQL
+  and FAN 0 give frames identical to image 28 over 3,404 blocks; glide between tuned pitches; lock words, old word
+  compatibility, a locked step plays PURE and fanned; store bytes; four pages; lockable rows.
+- Suite: all 19 earlier tests pass (test_every_machine now accepts 6 or 7 pages).
+- Save and reload: only the store bytes are tested. The emulator cannot exercise a real save and reload (as for
+  every DGK2 value); check on the unit after a power cycle.
+- DigiDrone sounds: five FM TONE sounds (STILL AIR, SLOW CHAIN, DARK RING, IRON BELLS, BEAT FIELD) in
+  `~/glide/DIGIDRONE_SOUNDS_29.md`, patches `experiments/b29_patches.py`, renders `renders/b29/*.wav`. FM TONE
+  routing, ratio tables and AB LEVEL measured in the SHARC emulator (`experiments/b29_fm_*.py`). COUPLE on all
+  five is AB LEVEL (LVAB, slot 53). LFOs in the renders are written into the frames, not the stock LFO: depth and
+  SPD x MULT unverified on the unit.
+
+## Image 30: the deferred chord also avoids note-off frames (2026-11-18)
+
+`~/dn2-workspace/build/DN2_1.12_DIGIGLIDE_30.syx`, sha256
+cbc9c29d2f45311803da0246a1809c01e8f293f3c6bfa660fa1654ef8fda32ee, preflight PASS. Not flashed. Image 29 plus one
+change; supersedes it.
+
+- dg_tx: the deferred chord event now runs on the first frame with neither a note-on nor a note-off (was: no
+  note-on). Closes the open point of image 28: a late frame is dropped whole, so a chord event on a note-off frame
+  could have lost another track's note-off. W on the status box now also counts events forced onto a note-off frame.
+- `tests/test_b28_load.py` gained a check per mode: the hook's cost on frames with note-offs stays under the note
+  frame limit. It passes on image 30 (20,736 CHRD, 16,950 STRM / STRU, 21,368 HARP) and also on image 29: in the
+  test pattern no chord event happened to fall on a note-off frame, so the test does not tell the two images
+  apart. The fix is by reading the code, not by a failing test. Longest wait still 1 frame, none forced.
+- test_b29_tune (23 checks) and all 18 other tests pass on image 30.
+- Still open: the 2:20 glitch; H N W D on the unit.
+- DigiDrone second set (2026-11-18): GLASS ORGAN, UNDERTOW, WIRE CHOIR, HOLLOW FIFTHS, STORM GLASS in
+  `experiments/b30_patches.py`, renders `renders/b29/{organ,undertow,wire,hollow,storm}.wav`, sheet appended to
+  `DIGIDRONE_SOUNDS_29.md`. Rendered on the first set's captures. STORM GLASS turned down once (brightness
+  centroid 3.4 kHz at the swell, now 2.7 kHz). Not heard on hardware.
+
+## Image 31: the ten DigiDrone sounds in the firmware (2026-11-19)
+
+`~/dn2-workspace/build/DN2_1.12_DIGIGLIDE_31.syx`, sha256
+cdbd894991e01856c149607f45d75219f37da3d6a710ada60261447dd97e7803, preflight PASS (22/22, signed). Not flashed.
+Image 30 plus the sound loader.
+
+- Shortcuts: [FUNC] + push knob A steps to the next of the ten sounds (name shown); [FUNC] + push knob B loads the
+  picked sound onto the current track. Synth tracks only. A load replaces the track's whole sound (not saved until
+  the owner saves) and sets the sound's DigiGlide settings.
+- The sounds are stored as ten 360 byte stock sound records (`tests/make_drones.py` writes `dg_drones.h`).
+- Loader: shortcut_tick (audio ISR) only sets dg_drone_req (bit 0 pick, bit 1 load); dg_ui_step does the work.
+  drone_load copies the record to RAM, calls stock 0x400DD1EA(sound, buf), clears the per voice sound pointers at
+  0x800052A0+8 for the track's voices so the DSP mirror refreshes, then sets the DigiGlide values with dg_par_set.
+- LFO encoding found here: SPD word = 0x4000 + speed*256; MULT index 0 = x1; DEST word = slot << 8; the swing is
+  2 x (DEP word - 0x4000), so the stored depth is half the sheet's first figure; SPD x MULT = 8 is 16 bars
+  (measured on DARK RING's filter only). LFO WAVE is left at the sound default (index 1), not triangle.
+- Leftover movement of up to 3 steps on slots 43, 68, 81, 98 after a load, source not found. Emulator only.
+- `tests/test_b31_drones.py` passes; test_b29_tune and all 19 earlier tests pass.
+- Placement sensitivity (not explained): the first build of image 31 failed test_b17_locks (the emulated panel
+  dropped [RECORD] and a trig key's release) and test_every_machine (dropped [PLAY]). Neither test touches the
+  drone code (dg_drone_req never changes). Image 30 drops [PLAY] too (5 of 10 in a probe; image 31 3 of 10). A
+  variant with two no-ops in drone_pick, code that never runs in the test, passed; the build without them (sha
+  43ce5374...4423d5) failed at four timing offsets and from a fresh boot snapshot. So the emulator's dropped key
+  events move with where code sits in the image, not with what it does. The two no-ops are kept in drone_pick
+  (commented). Why placement matters inside the emulator is not known; it could in principle be a real timing
+  effect on the unit, so check [RECORD] and trig key releases there.
+- Test changes for the same reason: dgkit.Session.play retries up to three times when no frame has a note-on;
+  test_b17_locks sends up to 4 extra key releases; test_every_machine section F retries its second play.
+- Not heard on hardware; the loader has never run on the unit.
+- Still open: the 2:20 glitch; H N W D on the unit.
+
+## Image 32: two DigiGlide tracks sound at once (2026-11-19)
+
+`~/dn2-workspace/build/DN2_1.12_DIGIGLIDE_32.syx`, sha256
+c6ad8d45a57996f14e513861647f52c456a0597578b75cd63417089988a1fbfb, preflight PASS (22/22, signed), 1,919,909 bytes.
+Not flashed. Image 31 plus this.
+
+- Owner on image 31: a loaded drone played "just single notes". Cause: another track had DigiGlide on and its
+  chord was sounding. Through image 31 there was one chord engine: while one track's chord sounded (held, playing
+  or ringing out) every other DigiGlide track got stock's single notes. Every drone sets HOLD on, so it never let go.
+- Now two chord slots (NE = 2 in digiglide.c). Everything a chord owns is kept twice: the core state (TS), DGS,
+  dg_cur, dg_ui, dg_name, PM, BP, PD, the level and restrike state, damp, nw_last. The old names are macros for "the
+  slot in work" (sel); only the hook changes the slot and puts slot 0 back. Fields there is one of (blocks, the UI's,
+  the counters) are GL = slot 0's. The symbols DG, T, dg_ui, dg_name, dg_cur, dg_tail_log are slot 0's (aliases).
+- dg_tx_body: the frame's note-ons are routed once (RT, route): to the slot that plays the note's track, else the
+  one that last did, else a slot with nothing sounding and no event waiting (slot 0 first). Then each slot runs its
+  part (slot_block) on the stock words and adds to the outgoing note-on / note-off words. One chord event is worked
+  out a frame, the slots in turn.
+- A third DigiGlide track that plays while both slots sound gets one stock note (as a second one did before).
+- dg_chord_name and the status box's second line look up the slot that plays the track.
+- `tests/test_b32_two.py` (12 checks): drone (HOLD, 4 voices) on track 2 and three chords on track 3, each on its
+  own voices; no note-off and no pitch change on the drone from the other track; the glide track's chords equal
+  the ones it plays alone; chord name; third track gets a stock note; both play again after the stop. The harness
+  does not play track 1's trigs in this setup (image 31 neither), so the test uses tracks 2 and 3.
+- All 21 earlier tests pass on image 32 (no placement trouble this time).
+- Load, mod code bytes a block in the emulator (scratch scripts, not in tests/). One track, 6 voices: median 14,456
+  (image 31: 14,430). With kick, snare, 16th hats and bass: one track 6 voices, note frames at most 19,418; glide 6
+  + drone 3: median 24,568, note frames 27,812; glide 6 + drone 4: 26,920 / 30,452; 6 + 6 without drums: 31,820 /
+  36,148. test_b28_load's limit for note frames is 30,000. Every drum and bass note went out in each case, none on
+  a chord voice. The emulator cannot drop a late frame: H on the unit decides.
+- Not tested: keys played by hand on two tracks; MIDI in on two tracks; the pages while slot 1 plays the shown
+  track; save and reload. Nothing of image 31 or 32 has been checked on the unit except the owner's report above.
+- Still open: the 2:20 glitch; H N W D on the unit; the drones' fifth-stack chords may fuse into one tone.
+
+## Image 33: a lighter block, and the deep DigiDrone set (2026-11-20)
+
+- Owner on image 32, one glide track (HARP, no drone) with bass and kick: "I am loosing sounds", then "anyway to make
+  this more efficent". Status box: H 1102 (shown 102), N 332, W 00, D 2 (microseconds; a block is 667). And: "the
+  digidrones are too shallow sounding".
+- The readings are real: DTMR3 = 0x001D (bus clock / 16), DTRR3 = 275000 at 30 Hz, 8.25 counts a microsecond.
+  CACR 0xA50CE100 (instruction cache on; data default not cached), ACR0 0x4007E020 (0x40000000 to 0x47FFFFFF data
+  cached). The frame at 0x80005E60 is on-chip SRAM.
+- Not explained: 332 microseconds for about 14,800 code bytes is about 22 ns a byte, roughly ten times what stock's
+  own interrupt code could take. A block touches only about 195 16 byte lines (3 KB), so cold caches do not explain
+  it. Either the mod's region runs uniformly slowly or the hook is preempted. The status box now measures it (below).
+- Fewer instructions: clone_voice copies four longs a turn; the note loop is skipped with no note-on / note-off;
+  nw_last, pan_last, lw_last cache the words written; dg_core: sin_cyc 32 bit path, vib_term, the scrub skip (host
+  checked exact).
+- The light block: slot_block writes the voices from the last block's result and counts the block as owed (DG.owed)
+  instead of working the chord out, (a) on a frame with another track's note-on or note-off, (b) on every second
+  block of a steady chord (no event waiting, no strum / harp / bass pattern / restrike / level work running,
+  DG.hurry clear). The next full block runs the owed blocks first, so nothing drifts in time; pm_block schedules by
+  GL.blocks anyway. DG.hurry (set on a chord's end, a new HARP chord, a preset load, VOICES changed) forces full
+  blocks until one has run.
+- Emulator, one 6 voice HARP track with drums, mod code bytes a block: image 32 median 13,230, note frames at most
+  14,784. Image 33: median 4,478, mean 6,470, 1,089 of 3,004 blocks light, 1,679 under 6,000; most frames with
+  another track's note-on cost about 4,400. Not better: the worst block (12,060 on a note frame, 13,282 overall),
+  where a chord event and the owed block meet. A steady chord under a kick is where it helps.
+- Side effect, measured against image 28 (test_b29_tune D): after a chord change on a note frame a glide runs one
+  block early, note words up to 4/256 semitone off for the glide's length; gate, velocity and level words are
+  identical. The check now allows 6/256 on note words.
+- Status box line 2 now alternates every 2,048 blocks: "H### N### L###" (L = the shortest hook time while a chord
+  sounds) and "I## U## F##": the same 200 turn loop timed in the hook (I) and in the UI task (U), and 256 frame reads
+  (F), microseconds, shortest seen, at most 99. I much above U says the hook is slow or preempted; F large says frame
+  memory is slow. W and D are no longer shown.
+- Deep drones: all ten reworked (experiments/b33_patches.py, renders/b33, tests/make_drones_tab.py, dg_drones.h
+  regenerated with make_drones.py; the sheet has a new section). An operator an octave down, more FM and feedback
+  under a lower filter, wider offsets, chorus / delay / overdrive / more reverb.
+- Voicings measured on image 32 from a C3 trig, 4 voices: MAJ EXT 9 or 6+9 gives 36 48 55 62 (no third); MAJ with
+  MAJ7, 7, MAJ7+9 or 6 gives 36 48 55 64; MIN gives 36 48 55 63; 5TH at VOIC 127 gives 36 48 60 67. So the old
+  STILL AIR, GLASS ORGAN, STORM GLASS and IRON BELLS played no third. New settings: STILL / STORM and ORGAN MAJ7,
+  BELLS EXT 6, BEAT FIELD VCNT 4 MIN VOIC 70, HOLLOW FIFTHS VCNT 4 VOIC 127. Every drone but HOLLOW FIFTHS has a third.
+- Tests on image 33: the 19 earlier tests, test_b31_drones, test_b32_two and test_b29_tune (D with the tolerance
+  above) pass. Preflight PASS, runtime helpers none. sha256 bb26a15a...cb266a2.
+- Not tested: anything on the unit. The light block has not been heard; whether every second block is audible on
+  fast vibrato or short glides is not known (750 pitch updates a second instead of 1,500).
+- Still open: the 2:20 glitch; why a block takes so long on the unit (read L and I U F); the glide track's VCNT.
+
+## Image 34: note-ons off the heavy frame, settings follow a pattern change, drone loads rest STRK (2026-11-21)
+
+`~/dn2-workspace/build/DN2_1.12_DIGIGLIDE_34.syx`, sha256
+848625fb2785bdf2b9e3fbd35c002f18c9c01c62c8addd2ab91a08156c0b3ffd, preflight PASS, runtime helpers none.
+
+- Owner on image 33: "better for sure! might be good enough for release", then: "there is delay when first starting
+  glide", "sometimes the arp or the chord lags on press", "typically arp starts and then the chord hits after"
+  (played by hand, BPAT ARP, chord and bass pattern as one), "switching between patterns ... single notes after",
+  "why does the drone keep repeating or restarting after 3 seconds" (STRK was on: "strk did it").
+- Emulator, images 32 and 33: a chord sounds 2 blocks after its note, by trig or by key, with or without drums on the
+  step; with BPAT 1 all five voices start on one frame. No lag to find there.
+- Reading of the lag: on the unit a frame later than its render is dropped with its note-ons (build 28). A chord's
+  note-ons rode on the frame that worked them out, the heaviest kind (profile on 33p: 11,400 code bytes with one
+  owed block, 13,250 with two; a light frame 4,300). If that frame is lost the chord's voices never start, the bass
+  pattern's next note does, and the chord comes at the next strike. Not proven on the unit before the change.
+- Change: note-ons and note-offs of a chord are kept (DG.pend_on, DG.pend_off) and sent on the next frame, which is
+  made a light one. Until then a voice with a waiting note-on keeps the note and level words it had. A chord sounds
+  3 blocks after its note now (one block, 0.67 ms, later). The strum damp counts caught-up blocks.
+- Owner on image 34: "34 is great. really responsive btw".
+- Pattern change (inherit_tick, UI task): settings live in the pattern's kit, so a pattern whose kit never had them
+  played single notes. When the kit changes, a synth track that was on before, has no settings in the new kit and
+  holds the same sound (machine and name) takes the old kit's settings, once ("DIGIGLIDE KEPT: TRACK n"). Not run
+  in the emulator (no pattern change there); the owner's check on the unit is owed.
+- Drone load: also sets PLAY CHRD, BPAT off, BLOM 64, STRK off (make_drones_tab.py; DRONE_DG rows are 30 bytes).
+  make_drones.py must be run with image 33 as the converter's host: on image 34's layout the emulated panel loses
+  the machine select and the blobs come out wrong (the script says FAIL; dg_drones.h was regenerated with 33).
+- Tests changed for the one block: test_b29_tune D (gate words as image 28's or its block before; note words within
+  6/256 semitone; blocks at a note edge left out), test_b27_damp E (the next strum damps a block before its first
+  note-on). test_rev5 F needed the kept note word.
+- Tests on the final image: test_b32_two, test_b31_drones, test_b28_load, test_every_machine, test_rev5,
+  test_rev5_ui, test_b24_bal, test_b23_bass, test_b21_strum, test_b21_spd, test_b19_play pass; the build before the
+  drone table change passed test_b27_damp, test_b29_tune D and test_rev5 as well. A clean run of all 22 was still
+  going when this was written (two runs wrote to the same output files and had to be thrown away).
+- MANUAL.md added (how to use it), linked from the README.
+- Still open: the 2:20 glitch; why a block takes so long on the unit (L and I U F not read back yet); the status
+  box's timing lines are still in the image.

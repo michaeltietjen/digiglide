@@ -106,12 +106,16 @@ for attempt in range(6):                                 # (a [RECORD] tap that 
         relocked = push_knob(lambda v: v >= 0)
         lk_re = get(0, 4)
     h.release(cfkit.TRIG(1)); h.frames(30); h.run(200_000_000); h.frames(30)
+    for _ in range(4):                                   # (a dropped release leaves the step held: image 31's layout)
+        if i32('dg_view_step') == -1:
+            break
+        h.release(cfkit.TRIG(1)); h.frames(30); h.run(200_000_000); h.frames(30)
     if held == 0:
         h.png('chord_after_release.png')
         h.press(cfkit.RECORD, 500_000); h.frames(20); h.release(cfkit.RECORD); h.frames(20); h.run(300_000_000)
         break
     print(f'    attempt {attempt + 1}: no step held (GRID RECORDING not on), retrying')
-check(held == 0 and lk is not None and lk >= 67 and lane_lk == lk + 1, f'A: POS locked on step 1 and following the knob: {lk} (lane 0 word {lane_lk})')
+check(held == 0 and lk is not None and lk >= 67 and lane_lk == 8192 + lk + 1, f'A: POS locked on step 1 and following the knob: {lk} (lane 0 word {lane_lk})')
 check(lk_half is not None and lk_half >= lk + 2, f'A: half-step knob moves add up: {lk} -> {lk_half}')
 check(k.slot(T, 55) == pos0, f'A: the track\'s POS is as it was ({k.slot(T, 55) >> 8})')
 check(held == 0 and shown == 1 << 4, f'A: while held the page showed step 1 with POS locked (lock bits {shown:#x})')
@@ -133,7 +137,7 @@ check(k.call(A(0x4003EFDE), [s.app]) == s.ctx0, 'B: (the session\'s active track
 put = lambda step, kk, v: k.call(s.sym['dg_lock_put'], [T, step, kk, v & 0xFFFFFFFF]) & 0xFF
 check(put(0, 4, 100) and put(4, 0, 3) and put(4, 5, 0) and put(8, 4, 20), 'B: locks written: step 5 TYPE DIM, GLID 0; step 9 (no trig) POS 20')
 check((get(4, 0), get(4, 5), get(8, 4), get(4, 4)) == (3, 0, 20, -1), f'B: read back {(get(4, 0), get(4, 5), get(8, 4), get(4, 4))}')
-check(lane(0, 4) == 129 * 4 and lane(100, 4) == 129 * 1, f'B: lane words {lane(0, 4)}, {lane(100, 4)}')
+check(lane(0, 4) == 8192 + 129 * 4 and lane(100, 4) == 129 * 1, f'B: lane words {lane(0, 4)}, {lane(100, 4)}')
 log = TrigLog(s)
 steps = []
 def each(i):

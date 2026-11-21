@@ -15,6 +15,7 @@
 typedef struct {                    /* the 16 parameters, as stored knob indices (same order as Params.FIELDS) */
     uint8_t key, scl, voic, pos, vcnt, bass, sprd, move;   /* key / scl: the scale for Scale steps and EVOL */
     uint8_t glid, path, time, ordr, stag, drft, vib, scrb;
+    uint8_t tune, fan;                  /* build 29: TUNE 0 Equal, 1 Pure; FAN 0..127 */
 } dg_params;
 
 typedef struct {
@@ -47,6 +48,7 @@ typedef struct {
     int32_t aroot, avoic, apos;         /* what the voices' places are built on: the root, VOIC and POS */
     int32_t step;
     int32_t scrb, scrb_t;               /* Q30 */
+    int32_t nfan;                       /* build 29: the chord voices FAN spreads (the layout's n) */
 } dg_track;
 
 void dg_init(dg_track *t, uint32_t tempo_word, uint32_t pattern);
@@ -62,6 +64,8 @@ void dg_init(dg_track *t, uint32_t tempo_word, uint32_t pattern);
 void dg_trig(dg_track *t, int32_t step, const dg_params *p, uint32_t cw);
 uint32_t dg_chord_for(int32_t root, int32_t typ, int32_t ext, int32_t key, uint32_t locks);
 void dg_gate_off(dg_track *t);
+/* build 29: voice i's offset from equal temperament when it plays `note`, Q16 cents (TUNE Pure and FAN) */
+int32_t dg_tune_off(const dg_track *t, int i, int32_t note);
 void dg_set_scrb(dg_track *t, int32_t value);
 /* advance one block; out_c16[v] = pitch (Q16 cents) of every started voice; returns a mask: bit v = started,
  * bit 8 + v = gate on */

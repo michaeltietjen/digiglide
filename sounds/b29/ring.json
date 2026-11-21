@@ -1,0 +1,99 @@
+{
+ "name": "DARK RING",
+ "machine": "FM TONE",
+ "character": "The same chain with feedback on B2, its last operator, and more FM; the filter low, opening over 16 bars and closing again.",
+ "changed_from_init": {
+  "Filter FREQ (Frequency, slot 67)": {
+   "knob": 48,
+   "fine": 0,
+   "stored": "0x3000",
+   "default": "0x7f00"
+  },
+  "Filter RESO (Resonance, slot 68)": {
+   "knob": 20,
+   "fine": 0,
+   "stored": "0x1400",
+   "default": "0x0000"
+  },
+  "Amp ATK (Attack Time, slot 81)": {
+   "knob": 78,
+   "fine": 0,
+   "stored": "0x4e00",
+   "default": "0x0800"
+  },
+  "Amp DEC (Decay Time, slot 83)": {
+   "knob": 127,
+   "fine": 0,
+   "stored": "0x7f00",
+   "default": "0x2000"
+  },
+  "Amp SUS (Sustain Level, slot 84)": {
+   "knob": 127,
+   "fine": 0,
+   "stored": "0x7f00",
+   "default": "0x6000"
+  },
+  "Amp REL (Release Time, slot 85)": {
+   "knob": 104,
+   "fine": 0,
+   "stored": "0x6800",
+   "default": "0x1800"
+  },
+  "FX REV (Reverb Send, slot 87)": {
+   "knob": 45,
+   "fine": 0,
+   "stored": "0x2d00",
+   "default": "0x0000"
+  },
+  "SYN ALGO (Algorithm, slot 25)": {
+   "knob": 4,
+   "fine": 0,
+   "stored": "0x0400",
+   "default": "0x0000"
+  },
+  "SYN FDBK (Feedback, slot 31)": {
+   "knob": 34,
+   "fine": 0,
+   "stored": "0x2200",
+   "default": "0x0000"
+  },
+  "SYN AOFF (Ratio A Offset, slot 59)": {
+   "knob": 64,
+   "fine": 15,
+   "stored": "0x400f",
+   "default": "0x4000"
+  },
+  "SYN B1OF (Ratio B1 Offset, slot 60)": {
+   "knob": 63,
+   "fine": 246,
+   "stored": "0x3ff6",
+   "default": "0x4000"
+  },
+  "SYN B2OF (Ratio B2 Offset, slot 61)": {
+   "knob": 64,
+   "fine": 23,
+   "stored": "0x4017",
+   "default": "0x4000"
+  },
+  "SYN LEV (A Level, slot 38)": {
+   "knob": 44,
+   "fine": 0,
+   "stored": "0x2c00",
+   "default": "0x0000"
+  },
+  "SYN LEV (B Level, slot 42)": {
+   "knob": 38,
+   "fine": 0,
+   "stored": "0x2600",
+   "default": "0x0000"
+  }
+ },
+ "couple": "AB LEVEL (LVAB, FM TONE page 4): up for more FM between the operators, down to the centre for the sound as saved, below about -16 for none. FDBK is the second knob to ride: it is the ring.",
+ "lfo": {
+  "destination": "FILTER.FREQ",
+  "centre": "0x4200",
+  "depth": "0x1200",
+  "period_bars": 16
+ },
+ "digiglide": "VCNT 4, GLID 2 bars, HOLD on, DRFT 10, VIB 2, TYPE MIN, VOIC 70"
+}

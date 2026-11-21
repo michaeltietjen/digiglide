@@ -22,7 +22,7 @@ dg_count_stub:
     lsl.l   #4,%d0
     lea     OSA_42432AD4,%a0
     move.l  (%a0,%d0.l),%d0
-    addq.l  #3,%d0
+    addq.l  #4,%d0                  /* build 29: four pages */
     addq.l  #4,%sp
     rts
 1:  moveq   #4,%d1
@@ -43,7 +43,7 @@ dg_page_stub:
     move.l  16(%sp),%d1
     sub.l   (%a0,%d0.l),%d1
     bmi.s   1f
-    moveq   #3,%d0
+    moveq   #4,%d0
     cmp.l   %d0,%d1
     bge.s   1f
     move.l  %d1,-(%sp)
@@ -70,7 +70,7 @@ dg_page_stub:
     .globl  dg_row_stub
 dg_row_stub:
     move.l  8(%sp),%d0
-    cmpi.l  #339,%d0
+    cmpi.l  #347,%d0                /* 321..346: 26 records (build 29) */
     bcc.s   1f
     cmpi.l  #321,%d0
     bcs.s   1f

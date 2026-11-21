@@ -75,12 +75,20 @@ def pbytes(p):
 HEAP_CODE = (0x401200E0, 0x4012055C) if osver.OS == '1.12' else (0x4011FE00, 0x4012027C)
 
 
+# image 25: the RTOS primitives (mutex lock / wait, 1.12 0x40001500..0x40001900): a snapshot can stop the main thread
+# switched out inside one (0x400016D2 / 0x40001724 on its stack); a call from there deadlocked the UI (the throw site
+# 0x4018B4A0, no trig ever reached the frame). Same addresses on 1.11 (section 3 starts identically).
+RTOS_CODE = (0x40001500, 0x40001900)
+
+
 def settle(k, tries=4000):
-    """run the main thread until neither its pc nor a return address near the top of its stack is in the allocator."""
-    h, (lo, hi) = k.h, HEAP_CODE
+    """run the main thread until neither its pc nor a return address near the top of its stack is in the allocator
+    or the RTOS primitives."""
+    h = k.h
+    bad = lambda w: any(lo <= w < hi for lo, hi in (HEAP_CODE, RTOS_CODE))
     for _ in range(tries):
         sp = k.uc.reg_read(cfkit.mc.UC_M68K_REG_A7)
-        if not (lo <= h.pc < hi) and not any(lo <= w < hi for w in struct.unpack('>48I', h.r(sp, 192))):
+        if not bad(h.pc) and not any(bad(w) for w in struct.unpack('>48I', h.r(sp, 192))):
             return True
         h.run(211)
     return False
@@ -186,7 +194,14 @@ class Session:
         return TrigLog(self)
 
     def play(self, blocks, bpm=120, each=None):
-        return self.k.play(blocks, bpm=bpm, each=each)
+        # The emulated panel drops key presses, [PLAY] among them, depending on where the main thread stands (so on
+        # the image's layout: image 31 lost the one in test_every_machine A that image 30 took; either image loses
+        # some when played ten times in a row). A run without a single note-on is played again, up to three times.
+        for _ in range(3):
+            fr = self.k.play(blocks, bpm=bpm, each=each)
+            if each is not None or any(f[0x22:0x24] != b'\0\0' or f[0x26:0x28] != b'\0\0' for f in fr):
+                break
+        return fr
 
     def tails(self):
         """dg_tail_log: bit 0 = the last trig glided from a released chord that still rang, bit 1 the one before, ..."""

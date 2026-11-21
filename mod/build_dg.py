@@ -32,16 +32,16 @@ ENTRY0 = 321
 # store). The rows these borrow are copied and made unlockable in ui/dg_ui.c (dg_row).
 # short, long, min, max, default (indices), formatter, row
 RECORDS = [
-    ('TYPE', 'Chord Type', 0, 3, 0, 'dg_fmt_type', ROW_TEXT),
+    ('TYPE', 'Chord Type', 0, 4, 0, 'dg_fmt_type', ROW_TEXT),     # build 23: 5TH
     ('EXT', 'Extension', 0, 7, 0, 'dg_fmt_ext', ROW_TEXT),
     ('KEY', 'Key', 0, 24, 0, 'dg_fmt_key', ROW_TEXT),
     ('VOIC', 'Voicing', 0, 127, 127, 'dg_fmt_voic', ROW_DIAL),
     ('POS', 'Position', 0, 127, 64, 'dg_fmt_pos', ROW_DIAL),
     ('GLID', 'Glide Time', 0, 12, 2, 'dg_fmt_glid', ROW_TEXT),
-    ('PLAY', 'Play Mode', 0, 0, 0, 'dg_fmt_play', ROW_TEXT),
+    ('PLAY', 'Play Mode', 0, 3, 0, 'dg_fmt_play', ROW_TEXT),       # CHRD STRM STRU HARP (build 19)
     ('HOLD', 'Hold', 2, 3, 2, 'dg_fmt_hold', ROW_TEXT),               # stored 2 = OFF, 3 = ON (digiglide.c HOLD_OFF)
     ('PATH', 'Glide Path', 0, 9, 0, 'dg_fmt_path', ROW_TEXT),
-    ('TIME', 'Glide Timing', 0, 4, 0, 'dg_fmt_time', ROW_TEXT),
+    ('TIME', 'Glide Timing', 0, 5, 0, 'dg_fmt_time', ROW_TEXT),   # build 23: DRON
     ('ORDR', 'Glide Order', 0, 4, 0, 'dg_fmt_ordr', ROW_TEXT),
     ('STAG', 'Stagger', 0, 6, 0, 'dg_fmt_stag', ROW_TEXT),
     ('MOVE', 'Move', 0, 9, 0, 'dg_fmt_move', ROW_TEXT),
@@ -50,9 +50,19 @@ RECORDS = [
     ('SCRB', 'Scrub', 0, 127, 127, 'dg_fmt_scrb', ROW_DIAL),
     ('VCNT', 'Voice Count', 0, 4, 0, 'dg_fmt_vcnt', ROW_TEXT),   # codes: 0 OFF, 1..4 = 3..6 voices
     ('BASS', 'Bass Voice', 0, 6, 2, 'dg_fmt_bass', ROW_TEXT),
+    ('SPD', 'Strum Speed', 0, 127, 64, 'dg_fmt_spd', ROW_DIAL),    # build 21: strum / harp gap, FX k 88
+    ('BPAT', 'Bass Pattern', 0, 7, 0, 'dg_fmt_bpat', ROW_TEXT),     # build 23: FX k 89..92
+    ('BRAT', 'Bass Rate', 0, 2, 1, 'dg_fmt_brate', ROW_TEXT),
+    ('BLOM', 'Bloom', 0, 127, 64, 'dg_fmt_bloom', ROW_DIAL),
+    ('STRK', 'Restrike', 0, 3, 0, 'dg_fmt_strk', ROW_TEXT),
+    ('BAL', 'Bass Balance', 0, 127, 64, 'dg_fmt_bal', ROW_DIAL),   # build 24: FX k 93
+    ('TUNE', 'Tuning', 0, 1, 0, 'dg_fmt_tune', ROW_TEXT),           # build 29: EQL / PURE, FX k 94
+    ('FAN', 'Fan', 0, 127, 0, 'dg_fmt_fan', ROW_DIAL),              # build 29: FX k 95
 ]
 PAGES = [('CHORD', 'DigiGlide', list(range(ENTRY0, ENTRY0 + 8))), ('MOTION', 'DigiGlide', list(range(ENTRY0 + 8, ENTRY0 + 16))),
-         ('SETUP', 'DigiGlide', [ENTRY0 + 16, ENTRY0 + 17, 0, 0, 0, 0, 0, 0])]   # entry 0 = an empty cell, as stock pages
+         ('SETUP', 'DigiGlide', [ENTRY0 + 16, ENTRY0 + 17, ENTRY0 + 19, ENTRY0 + 20, ENTRY0 + 18, ENTRY0 + 21,
+                                 ENTRY0 + 22, ENTRY0 + 23]),
+         ('TUNE', 'DigiGlide', [ENTRY0 + 24, ENTRY0 + 25, 0, 0, 0, 0, 0, 0])]   # build 29: TUNE FAN   # build 24: VCNT BASS BPAT BRATE / SPD BLOOM STRK BAL   # entry 0 = an empty cell, as stock pages
 HEAD = PT.RECORD - 8                       # entry 0 reads the 52 bytes before the table
 TAIL = 8                                   # the last stock record's formatter and unit, past the table
 
@@ -125,7 +135,7 @@ import hashlib
 assert hashlib.sha256(open(osver.STOCK_SYX, 'rb').read()).hexdigest() == osver.STOCK_SHA256, 'not the stock OS file'
 print('OS', osver.OS, osver.STOCK_SYX)
 srcs = ['digiglide.c', 'core/dg_core.c', 'hooks_dg.S', 'probe.S']
-entries = ['dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked', 'dg_lock_get', 'dg_lock_put', 'dg_lock_any', 'dg_view_step', 'dg_view_locks', 'dg_lockset_stub', 'dg_lockget_stub', 'dg_lockclr_stub', 'dg_arp_in', 'dg_arp_out', 'dg_arp_single', 'dg_arp_ins', 'dg_arp_outs', 'dg_arp_last']
+entries = ['dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked', 'dg_lock_get', 'dg_lock_put', 'dg_lock_any', 'dg_view_step', 'dg_view_locks', 'dg_lockset_stub', 'dg_lockget_stub', 'dg_lockclr_stub', 'dg_arp_in', 'dg_arp_out', 'dg_arp_single', 'dg_arp_ins', 'dg_arp_outs', 'dg_arp_last', 'dg_drone_sel', 'dg_drone_loads', 'dg_drone_req']
 if not a.no_ui:
     gen_ptable(stock, gen / 'ptable.S')
     srcs += ['ui/dg_ui.c', 'ui/hooks_ui.S', str(gen / 'ptable.S')]
@@ -149,9 +159,9 @@ if not a.no_ui:
         m.pointer(s.va, s.was, sym[bias], f'parameter table base (+{bias}) -> the relocated table')
     for s in bounds:
         m.patch(s.va, f'{s.was:08x}', f'{s.was + len(RECORDS):08x}', f'parameter entry bound {s.was} -> +{len(RECORDS)}')
-    m.jsr(A(0x400C24D2), 'dg_count_stub', stock='7204202f0004', why='SYN page count: +3 on a synth track')
-    m.jsr(A(0x400C24F2), 'dg_page_stub', stock='222f0008202f000c', why='SYN page descriptor: CHORD / MOTION / SETUP')
-    m.jsr(A(0x400C2418), 'dg_row_stub', stock='202f00040c8000000141', why='knob row for entries 321..338')
+    m.jsr(A(0x400C24D2), 'dg_count_stub', stock='7204202f0004', why='SYN page count: +4 on a synth track')
+    m.jsr(A(0x400C24F2), 'dg_page_stub', stock='222f0008202f000c', why='SYN page descriptor: CHORD / MOTION / SETUP / TUNE')
+    m.jsr(A(0x400C2418), 'dg_row_stub', stock='202f00040c8000000141', why='knob row for entries 321..346')
     m.jsr(A(0x40018118), 'dg_syn_stub', stock='4fefffe448d71c1c', why='SYN page draw (every machine): DigiGlide draws its pages')
     m.jsr(A(0x4004F8FE), 'dg_lockset_stub', stock='2f0a2f02246f000c', why='set lock: a DigiGlide row\'s lock goes to the packed lanes')
     m.jsr(A(0x4004EAA4), 'dg_lockget_stub', stock='206f00042028002c', why='get lock: a DigiGlide row\'s lock comes from the packed lanes')

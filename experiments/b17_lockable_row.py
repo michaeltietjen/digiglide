@@ -16,7 +16,7 @@ T = 1
 print('track 2 selected', s.select_track(T), 'mach', k.mach(T))
 s.set_sound(Ui(vcnt=5, type=1, ext=2, glid=3), t=T, mach=None, atk=None)
 s.trig(0, note=60, length=14, t=T)
-h.out = '/private/tmp/claude-503/-Users-mikem1-Downloads/54f10118-8f03-4039-bd92-53c6b1b3953b/scratchpad'
+h.out = '/tmp/digiglide'
 k.tap('SYN'); h.frames(2200)
 seen = []
 for _ in range(8):
