@@ -1,0 +1,122 @@
+/* DigiGlide site. One visual world: the Digitone's black panel, its white pixel screen, one lit-key amber.
+   Layout: a single centred column; sections separated by hairlines; screens drawn as pixel-lettered plates. */
+:root {
+  --coal: #111214; --panel: #17181b; --plate: #1d1f23; --seam: #2a2c31;
+  --bone: #f2f0ea; --dim: #a3a5ab; --amber: #ff8a1f;
+  --display: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --pixel: "Silkscreen", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--coal); color: var(--bone); font-family: var(--body); font-size: 17px; line-height: 1.55; }
+a { color: var(--bone); text-decoration-color: var(--amber); text-underline-offset: 3px; }
+a:hover { color: var(--amber); }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+img, svg, canvas { max-width: 100%; }
+
+/* top strip */
+.strip { border-bottom: 1px solid var(--seam); position: sticky; top: 0; background: rgba(17, 18, 20, .94); z-index: 5; }
+.strip .wrap { display: flex; align-items: center; gap: 20px; padding-block: 12px; flex-wrap: wrap; }
+.brand { display: inline-flex; line-height: 0; }
+.brand svg, .brand img { height: 30px; width: auto; }
+.strip nav { display: flex; gap: 18px; flex-wrap: wrap; margin-left: auto; font-family: var(--display); font-weight: 500;
+  letter-spacing: .08em; text-transform: uppercase; font-size: 14px; }
+.strip nav a { text-decoration: none; color: var(--dim); }
+.strip nav a:hover, .strip nav a[aria-current="page"] { color: var(--bone); }
+
+/* type */
+h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: .02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.04; text-transform: uppercase; }
+h2 { font-size: clamp(24px, 3.4vw, 32px); text-transform: uppercase; letter-spacing: .05em; }
+h3 { font-size: 20px; }
+p { margin: 0; max-width: 66ch; }
+.lead { font-size: 20px; color: var(--dim); max-width: 56ch; }
+.eyebrow { font-family: var(--pixel); font-size: 12px; letter-spacing: .08em; color: var(--amber); text-transform: uppercase; }
+.dim { color: var(--dim); }
+
+section { padding: 56px 0; border-bottom: 1px solid var(--seam); }
+.stack { display: flex; flex-direction: column; gap: 18px; }
+.stack-lg { display: flex; flex-direction: column; gap: 30px; }
+
+/* hero */
+.hero { padding: 56px 0 48px; }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; }
+.status { display: inline-flex; flex-wrap: wrap; gap: 8px 14px; font-family: var(--pixel); font-size: 12px; letter-spacing: .04em;
+  color: var(--dim); border: 1px solid var(--seam); border-radius: 6px; padding: 8px 12px; }
+.status b { color: var(--amber); font-weight: 400; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn { font-family: var(--display); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 15px;
+  text-decoration: none; padding: 11px 18px; border-radius: 6px; border: 1px solid var(--bone); color: var(--bone); }
+.btn.solid { background: var(--bone); color: var(--coal); }
+.btn:hover { border-color: var(--amber); color: var(--amber); }
+.btn.solid:hover { background: var(--amber); color: var(--coal); }
+
+/* the screen */
+.screen { background: #000; border: 1px solid var(--seam); border-radius: 10px; padding: 10px; line-height: 0; }
+.screen canvas, .screen img { width: 100%; height: auto; image-rendering: pixelated; border-radius: 4px; }
+.caption { font-size: 14px; color: var(--dim); margin-top: 8px; }
+
+/* video */
+.video { position: relative; aspect-ratio: 16 / 9; border: 1px solid var(--seam); border-radius: 10px; overflow: hidden; background: #000; }
+.video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+/* grids */
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--seam); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.card p { color: var(--dim); font-size: 16px; }
+.num { font-family: var(--pixel); color: var(--amber); font-size: 13px; }
+
+/* a page of the instrument, drawn as its screen shows it */
+.page { background: #000; border: 1px solid var(--seam); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.page-title { font-family: var(--pixel); font-size: 13px; letter-spacing: .06em; display: flex; justify-content: space-between; color: var(--bone); }
+.page-title span:last-child { color: var(--dim); }
+.knobs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 8px; }
+.knob { display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: var(--pixel); text-transform: uppercase; }
+.knob b { font-weight: 400; font-size: 14px; color: var(--bone); padding: 1px 6px; border-radius: 3px; }
+.knob.lock b { background: var(--bone); color: #000; }
+.knob i { font-style: normal; font-size: 11px; color: var(--dim); letter-spacing: .05em; }
+.page + p, .page-note { color: var(--dim); font-size: 16px; }
+
+/* lists of values */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.chips li { font-family: var(--pixel); font-size: 12px; letter-spacing: .04em; border: 1px solid var(--seam); border-radius: 5px; padding: 5px 9px; color: var(--bone); }
+ul.plain { margin: 0; padding-left: 20px; color: var(--dim); display: flex; flex-direction: column; gap: 6px; max-width: 66ch; }
+ul.plain b { color: var(--bone); font-weight: 600; }
+
+.notice { border-left: 3px solid var(--amber); padding: 4px 0 4px 16px; }
+.notice p + p { margin-top: 10px; }
+
+footer { padding: 36px 0 60px; color: var(--dim); font-size: 15px; }
+footer .wrap { display: flex; flex-direction: column; gap: 10px; }
+
+/* the manual */
+.manual { padding: 40px 0 20px; }
+.manual .wrap { max-width: 860px; display: flex; flex-direction: column; gap: 16px; }
+.manual h1 { font-size: clamp(30px, 5vw, 44px); }
+.manual h2 { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--seam); }
+.manual h3 { margin-top: 14px; }
+.manual ul, .manual ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+.manual code { font-family: var(--pixel); font-size: .82em; background: var(--plate); border: 1px solid var(--seam); border-radius: 4px; padding: 1px 5px; }
+.manual strong { font-weight: 600; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--seam); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--seam); }
+th { font-family: var(--display); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; color: var(--dim); background: var(--panel); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { white-space: nowrap; }
+.toc { background: var(--panel); border: 1px solid var(--seam); border-radius: 10px; padding: 16px 20px; }
+.toc ul { columns: 2; gap: 28px; padding-left: 18px; display: block; }
+.toc li { margin-bottom: 5px; break-inside: avoid; }
+
+@media (max-width: 820px) {
+  .hero .wrap { grid-template-columns: 1fr; }
+  .three, .two { grid-template-columns: 1fr; }
+  .toc ul { columns: 1; }
+  section { padding: 44px 0; }
+}
+@media (max-width: 420px) { .knobs { gap: 10px 4px; } .knob b { font-size: 12px; padding: 1px 3px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
