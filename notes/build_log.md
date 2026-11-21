@@ -1295,3 +1295,60 @@ Not flashed. Image 31 plus this.
 - MANUAL.md added (how to use it), linked from the README.
 - Still open: the 2:20 glitch; why a block takes so long on the unit (L and I U F not read back yet); the status
   box's timing lines are still in the image.
+
+## Image 35 (in work): the boot splash (2026-11-21)
+
+Scratch builds only so far, with a built-in placeholder frame; the owner supplies the frames. Not flashed.
+
+- Asked for: after Elektron's own logo (untouched) a short DigiGlide splash with the logo and the build number, then
+  the normal start; preflight must pass, the STARTUP menu must stay.
+- How the others do it. dnfw's bootscreen (the local copy and v0.50, OS 1.11): `jmp` over the prologue of the
+  intro's per-frame routine (0x400d3886), frames copied into the intro's source Bitmap and blitted, keyed on stock's
+  frame counter; there is no separate bootanim module, the animation is a chunk of bootscreen. Digiwerk's boot mark
+  (OS 1.12): the logo blit inside the same routine (0x400d3ac4, `jsr 0x40115adc`) replaced, setPixel into the source
+  Bitmap. Both draw in place of the logo inside stock's tunnel intro; neither adds time. Both use the Bitmap layout
+  (y up from the bottom); Digiwerk's first version was upside down on the unit.
+- Stock, 1.12 (1.11 in brackets): the intro task (0x400d3eea, priority 7) loops `jsr step ; tst.b d0 ; beq done`,
+  pending on a semaphore PIT3 posts (PCSR prescaler 512, PMR 8593: 30.0 a second at the 132 MHz bus clock DTIM3
+  showed). step = 0x400d3dc8 (0x400d3c64): Bitmap over the draw buffer *0x42c4cac8, the routine draws, full flush
+  0x40131f54 (0x40131c74) on the first frame and diff flush 0x40131fd2 (0x40131cf2) after; both send the buffer at
+  *0x402a10c8 (fb_front), swap front and back and return the new front. 175 frames.
+- DigiGlide's hook: `jsr dg_splash_stub` over the step's first six bytes (`lea -28(sp),sp ; move.l d2,-(sp)`). The
+  stub runs stock's step as a subroutine until it says "over", then answers "go on" and calls dg_splash_frame once a
+  tick: 1,024 bytes copied into the front buffer in the panel's own layout (pixel (x, y), y down: bit y % 8 of byte
+  8 x + 7 - y // 8), stock's diff flush, until the frames have had their ticks. Then "over", and stock stops the
+  timer and starts as always. Stock's intro is not touched; the splash adds its own length to the start.
+- Frames: mod/splash/*.png, 128 x 64, white = lit; timing.txt in ticks; "BUILD n" stamped at build time in a 5 x 7
+  font (mod/splash_gen.py). Raw, 1,024 bytes a frame in flash and in RAM (the mod is copied to 0x46800000). Code 190
+  bytes, 16 bytes of state. Limits set in the build: 48 frames, 90 ticks.
+- tests/test_b35_splash.py (cold boot, every display flush written down): stock's 175 intro frames are byte for
+  byte those of a build without the splash; then the splash's frames in order at their ticks; read back with
+  digikit's own panel decoder the picture is right way up; the intro ends once; the main screen comes up after the
+  same number of instructions as without (334M; the emulator does not time the ticks). Passes with the placeholder
+  and with six test frames.
+- Tried and dropped: the splash in place of stock's intro. The emulator never left the intro (one tick, then no
+  more), so there is no such mode.
+- Preflight PASS: section 2 (the bootstrap, where the STARTUP menu lives) untouched, 175,425 bytes spare.
+- Not known until it runs on the unit: that the picture is the right way up there (the layout is dnfw's, checked
+  by them on hardware, and the emulator's); that 30 ticks are a second; that nothing else waits on the intro's end.
+
+### Image 35 built with the owner's frames (2026-11-21)
+
+- Frames: the 24 of assets/boot/frames on the branch claude/brand-assets (pull request 1, not merged), copied to
+  mod/splash/. splash_gen.py now uses that branch's 5 x 7 lettering and its label: stamp.txt `centre 53 text BETA
+  from 17` writes "BETA 35" where the frames carry "BETA 28". Stamped with 28 the build's frames are the branch's
+  PNGs pixel for pixel. timing.txt: 2 ticks a frame, the last 20: 66 ticks, 2.2 s. 24,576 bytes; 175,223 spare.
+- ~/dn2-workspace/build/DN2_1.12_DIGIGLIDE_35.syx, sha256 c6c8472f...e90155b, preflight PASS (13 lines ok, section 2
+  untouched), a second build is the same file.
+- test_b35_splash OK: 175 stock intro frames as without the splash, 24 splash frames at their ticks, the intro's end
+  once, the main screen after 335M instructions (334M without). The test's main screen check was weak (a bright
+  splash frame counted): it now looks only after the intro's end and never takes a splash frame.
+- The emulator is deterministic: a repeated start is the same run. Three different frame sets (1, 6, 24 frames) all
+  reach the main screen. The STARTUP menu is not emulated (the boot test starts at the MAIN OS); it is in section 2,
+  which is stock's byte for byte.
+- On the scratch build with the placeholder: test_off_is_stock OK, test_b32_two OK.
+- Off: build with `-D DG_SPLASH=0` (no hook, no frames).
+
+### Image 34: the clean run finished (2026-11-21)
+
+All 22 tests OK on the final image 34 (sha256 848625fb...), one run, nothing else writing its outputs.

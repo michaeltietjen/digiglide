@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.expanduser('~/glide/.claude/skills/digitone-2-modding-skill/scripts'))
 import cfmod, dn2paths as P
 from dnfw.patch import paramtable as PT
-import osver, port_os, preflight
+import osver, port_os, preflight, splash_gen
 from osver import A
 
 OURS = {'__bss_start', '__bss_end', '__image_end'}
@@ -134,14 +134,16 @@ stock = cfmod.section(osver.STOCK_SYX, 3)
 import hashlib
 assert hashlib.sha256(open(osver.STOCK_SYX, 'rb').read()).hexdigest() == osver.STOCK_SHA256, 'not the stock OS file'
 print('OS', osver.OS, osver.STOCK_SYX)
-srcs = ['digiglide.c', 'core/dg_core.c', 'hooks_dg.S', 'probe.S']
-entries = ['dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked', 'dg_lock_get', 'dg_lock_put', 'dg_lock_any', 'dg_view_step', 'dg_view_locks', 'dg_lockset_stub', 'dg_lockget_stub', 'dg_lockclr_stub', 'dg_arp_in', 'dg_arp_out', 'dg_arp_single', 'dg_arp_ins', 'dg_arp_outs', 'dg_arp_last', 'dg_drone_sel', 'dg_drone_loads', 'dg_drone_req']
+srcs = ['digiglide.c', 'core/dg_core.c', 'hooks_dg.S', 'probe.S', 'dg_splash.c']
+defs.setdefault('DG_SPLASH', '1')            # the boot splash after stock's intro (image 35); 0: none
+print(splash_gen.write(gen / 'dg_splash_gen.h', defs['DG_BUILD']))
+entries = ['dg_splash_stub', 'dg_splash_frame', 'dg_splash_phase', 'dg_splash_ticks', 'dg_splash_shown', 'dg_splash_sum', 'dg_stub', 'dg_tx', 'T', 'DG', 'dg_cur', 'dg_ui', 'dg_test_read', 'dg_tail_log', 'dg_chord_name', 'dg_name', 'dg_msg', 'dg_vchk', 'dg_probe_rx', 'dg_probe_tag', 'dg_probe_tx', 'dg_imported', 'dg_par', 'dg_par_set', 'dg_marked', 'dg_lock_get', 'dg_lock_put', 'dg_lock_any', 'dg_view_step', 'dg_view_locks', 'dg_lockset_stub', 'dg_lockget_stub', 'dg_lockclr_stub', 'dg_arp_in', 'dg_arp_out', 'dg_arp_single', 'dg_arp_ins', 'dg_arp_outs', 'dg_arp_last', 'dg_drone_sel', 'dg_drone_loads', 'dg_drone_req']
 if not a.no_ui:
     gen_ptable(stock, gen / 'ptable.S')
     srcs += ['ui/dg_ui.c', 'ui/hooks_ui.S', str(gen / 'ptable.S')]
     entries += ['dg_count_stub', 'dg_page_stub', 'dg_row_stub', 'dg_syn_stub', 'dg_row', 'dg_on_mask', 'dg_pass_stub', 'dg_ui_page', 'dg_ui_first', 'dg_ui_locks', 'dg_ptable', 'dg_pt_b16', 'dg_pt_b40']
 m = cfmod.Mod([s if os.path.isabs(s) else os.path.join(HERE, s) for s in srcs], entries=entries, init='dg_mod_init',
-              include=[HERE, os.path.join(HERE, 'core')], defines=defs, stock=osver.STOCK_SYX)
+              include=[HERE, os.path.join(HERE, 'core'), str(gen)], defines=defs, stock=osver.STOCK_SYX)
 ISR_MOVE = '2039' + f'{A(0x402876F8):08x}'          # move.l <ISR counter>,%d0
 m.context(A(0x40025E88), '6620', 'bnes right after the hooked move: reads its flags (the stub replays the move last)')
 m.context(A(0x40025E94), '4879' + f'{A(0x80005E60):08x}', 'the frame the driver sends right after: 0x80005e60')
@@ -150,6 +152,10 @@ m.jsr(A(0x40026762), 'dg_arp_in', stock='4eb940029cd4', why='notes into the arp:
 m.jsr(A(0x40026D3C), 'dg_arp_out', stock='4eb940029fa6', why='a key leaves the arp: its chord notes go')
 m.jsr(A(0x4012169A), 'dg_probe_rx', stock='47f9' + f'{A(0x40207AE6):08x}',
       why='SysEx router, before the Elektron header compare: the read-only USB probe (HELLO, PEEK)')
+if defs['DG_SPLASH'] != '0':
+    m.context(A(0x400D3C64) + 6, '4879', 'the intro step goes on with a pea after the two hooked instructions')
+    m.jsr(A(0x400D3C64), 'dg_splash_stub', stock='4fefffe42f02',
+          why='intro step entry: after stock\'s intro the DigiGlide splash takes the ticks')
 if not a.no_ui:
     sym = {8: 'dg_ptable', 16: 'dg_pt_b16', 40: 'dg_pt_b40'}
     bases = PT.base_sites(stock, BASE)

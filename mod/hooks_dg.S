@@ -12,3 +12,28 @@ dg_stub:
     lea     16(%sp),%sp
     move.l  OSA_402876F8,%d0
     rts
+
+/* image 35, the boot splash (dg_splash.c). jsr dg_splash_stub replaces `lea -28(%sp),%sp ; move.l %d2,-(%sp)`
+ * (6 bytes), the entry of the intro's step function, which the intro task calls once a tick with no arguments and
+ * whose byte result means "go on" (1) or "over" (0). While stock's intro runs the stub calls the step's body as a
+ * subroutine (the two displaced instructions replayed, then on into the step) and passes its result on; when the
+ * step says "over" the splash takes the ticks until it is over too. */
+    .globl  dg_splash_stub
+dg_splash_stub:
+    tst.l   dg_splash_phase
+    bne.s   2f
+    move.l  (%sp)+,%a0                  /* the step, after the displaced instructions */
+    pea     1f(%pc)                     /* its rts comes back here */
+    lea     -28(%sp),%sp
+    move.l  %d2,-(%sp)
+    jmp     (%a0)
+1:  tst.b   %d0
+    beq.s   3f
+    rts                                 /* stock's intro goes on */
+3:  moveq   #1,%d0
+    move.l  %d0,dg_splash_phase
+    jsr     dg_splash_frame
+    rts
+2:  addq.l  #4,%sp                      /* (the return into the step is not used) */
+    jsr     dg_splash_frame
+    rts
