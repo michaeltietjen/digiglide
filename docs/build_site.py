@@ -46,6 +46,7 @@ FOOT = """</div>
 <footer>
   <div class="wrap">
     <span>DigiGlide is unofficial and not affiliated with Elektron. Elektron and Digitone are trademarks of Elektron Music Machines.</span>
+    <span>Made by <a href="https://github.com/michaeltietjen">Michael Tietjen</a>. Found a problem in the beta? <a href="https://github.com/michaeltietjen/digiglide/issues">Report it on GitHub</a>.</span>
     <span><a href="./">Home</a> · <a href="https://github.com/michaeltietjen/digiglide">GitHub</a></span>
   </div>
 </footer>
