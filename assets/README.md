@@ -45,6 +45,24 @@ The frames in `boot_frames.bin` carry no build number. The firmware draws its ow
 number from `DG_BUILD`, in the 5 x 7 lettering, centred on x = 64 with its top at y = 54, from frame 17 on. The
 PNGs and the GIF show `BETA 28` as an example.
 
+## Logo animation for video
+
+`video/` holds the boot animation without the build label, five seconds each: half a second of dark, the
+animation, then a hold on the finished logo. All are 30 frames a second.
+
+| File (in `video/`) | Use |
+| --- | --- |
+| `digiglide-logo-youtube-1920x1080.mp4` | YouTube and other 16:9 video |
+| `digiglide-logo-instagram-reel-1080x1920.mp4` | Instagram Reels and Stories, YouTube Shorts (9:16) |
+| `digiglide-logo-instagram-post-1080x1350.mp4` | Instagram feed posts (4:5) |
+| `digiglide-logo-overlay-transparent-1920x1080.mov` | Transparent background, to lay over footage in an editor |
+
+```bash
+python3 assets/make_video.py
+```
+
+That rewrites the four files. It needs Pillow and ffmpeg.
+
 ## Regenerating
 
 ```bash
