@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DigiGlide</title>
+<meta name="description" content="DigiGlide: chords that glide on the Elektron Digitone II. One key plays a whole chord, and every voice slides into the next one. An unofficial firmware mod, in development.">
+<meta property="og:title" content="DigiGlide">
+<meta property="og:description" content="Chords that glide on the Digitone II. One key plays a whole chord, and every voice slides into the next one. In development.">
+<meta property="og:image" content="assets/apple-touch-icon.png">
+<link rel="icon" href="assets/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;700&family=Barlow:wght@400;500;600&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="strip">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="DigiGlide, home"><img src="assets/digiglide-lockup-on-dark.svg" alt="DigiGlide" width="180" height="30"></a>
+    <nav aria-label="Sections">
+      <a href="#plays">How it plays</a>
+      <a href="#pages">The pages</a>
+      <a href="#more">More</a>
+      <a href="#status">Status</a>
+      <a href="manual.html">Manual</a>
+      <a href="https://github.com/michaeltietjen/digiglide">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="stack-lg">
+      <div class="stack">
+        <span class="eyebrow">For the Elektron Digitone II</span>
+        <h1>Chords that glide</h1>
+        <p class="lead">One key plays a whole chord. Play another and every voice slides to its place in the new one. No retrigger, just harmony in motion.</p>
+      </div>
+      <div class="status"><span><b>In development</b></span><span>Image 34</span><span>OS 1.12</span><span>No download yet</span></div>
+      <div class="actions">
+        <a class="btn solid" href="manual.html">Read the manual</a>
+        <a class="btn" href="#video">Watch the sneak peek</a>
+      </div>
+    </div>
+    <div>
+      <div class="screen"><canvas id="glide" width="128" height="64" role="img" aria-label="Five voices drawn as lines across a small screen, sliding from one chord to the next every few seconds"></canvas></div>
+      <p class="caption">Five voices, low to high, moving from chord to chord. An illustration, drawn at the Digitone's screen size.</p>
+    </div>
+  </div>
+</section>
+
+<section id="video">
+  <div class="wrap stack">
+    <h2>Sneak peek</h2>
+    <p class="dim">A first look, recorded on the unit while it was still being built. You will hear a few rough edges; some have been fixed since.</p>
+    <div class="video"><iframe src="https://www.youtube-nocookie.com/embed/-F7zYz9itho" title="DigiGlide sneak peek" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>
+    <p class="caption">If the video does not load, <a href="https://youtu.be/-F7zYz9itho">watch it on YouTube</a>.</p>
+  </div>
+</section>
+
+<section id="plays">
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <h2>How it plays</h2>
+      <p class="dim">DigiGlide is switched on per track. It works on FM TONE, WAVETONE, FM DRUM and SWARMER tracks, with whatever sound is on them. With it off, a track is exactly stock.</p>
+    </div>
+    <div class="three">
+      <div class="card"><span class="num">01</span><h3>One key, one chord</h3><p>The note you play is the root. Set a key and each root plays the chord that belongs to it, or choose the type and the added notes yourself: major, minor, sus, dim or open fifths, with 6, 7, maj7 and 9.</p></div>
+      <div class="card"><span class="num">02</span><h3>Voices glide</h3><p>When the next chord comes, each voice slides to its new note. Set how long it takes, from a sixteenth note to sixteen bars or a full minute, and the curve it follows.</p></div>
+      <div class="card"><span class="num">03</span><h3>Hold and shape</h3><p>With HOLD on, a chord stays after you let go, so the next one always glides from it. Turn VOIC and POS under a held chord and it reshapes while it rings.</p></div>
+    </div>
+    <p class="dim">The sequencer writes the progression: trigs carry the roots, and chord type, voicing, glide time and more can be locked per step.</p>
+  </div>
+</section>
+
+<section id="pages">
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <h2>The pages</h2>
+      <p class="dim">Four pages appear after the machine's own SYN pages. These are drawn from the manual, not screenshots; the inverted value shows a parameter lock.</p>
+    </div>
+    <div class="two">
+      <div class="stack">
+        <div class="page" role="img" aria-label="The CHORD page: TYPE MIN, EXT 7, KEY C minor, VOIC 64, POS 0, GLID 1 bar, PLAY CHRD, HOLD ON">
+          <div class="page-title"><span>CHORD</span><span>C MIN7</span></div>
+          <div class="knobs">
+            <div class="knob lock"><b>MIN</b><i>TYPE</i></div><div class="knob"><b>7</b><i>EXT</i></div><div class="knob"><b>Cm</b><i>KEY</i></div><div class="knob"><b>64</b><i>VOIC</i></div>
+            <div class="knob"><b>0</b><i>POS</i></div><div class="knob"><b>1 BAR</b><i>GLID</i></div><div class="knob"><b>CHRD</b><i>PLAY</i></div><div class="knob"><b>ON</b><i>HOLD</i></div>
+          </div>
+        </div>
+        <p class="page-note"><b>CHORD</b> sets what is played: the triad, the added notes, the key, how widely the notes are spaced, the inversion, the glide time, how the chord is struck, and whether it holds.</p>
+      </div>
+      <div class="stack">
+        <div class="page" role="img" aria-label="The MOTION page: PATH SMTH, TIME TOGR, ORDR TOGR, STAG 0, MOVE BLOM locked, DRFT 8, VIB 4, SCRB 127">
+          <div class="page-title"><span>MOTION</span><span>C MIN7</span></div>
+          <div class="knobs">
+            <div class="knob"><b>SMTH</b><i>PATH</i></div><div class="knob"><b>TOGR</b><i>TIME</i></div><div class="knob"><b>TOGR</b><i>ORDR</i></div><div class="knob"><b>0</b><i>STAG</i></div>
+            <div class="knob lock"><b>BLOM</b><i>MOVE</i></div><div class="knob"><b>8</b><i>DRFT</i></div><div class="knob"><b>4</b><i>VIB</i></div><div class="knob"><b>127</b><i>SCRB</i></div>
+          </div>
+        </div>
+        <p class="page-note"><b>MOTION</b> sets how the voices travel: the curve, who arrives first, a gesture for the journey, a little drift and vibrato per voice, and SCRB, which lets you play the glide by hand.</p>
+      </div>
+      <div class="stack">
+        <div class="page" role="img" aria-label="The SETUP page: VCNT 5, BASS FOL, BPAT WALK, BRAT 1/8, SPD 64, BLOM 0, STRK OFF, BAL 0">
+          <div class="page-title"><span>SETUP</span><span>5 VOICES</span></div>
+          <div class="knobs">
+            <div class="knob"><b>5</b><i>VCNT</i></div><div class="knob"><b>FOL</b><i>BASS</i></div><div class="knob"><b>WALK</b><i>BPAT</i></div><div class="knob"><b>1/8</b><i>BRAT</i></div>
+            <div class="knob"><b>64</b><i>SPD</i></div><div class="knob"><b>0</b><i>BLOM</i></div><div class="knob"><b>OFF</b><i>STRK</i></div><div class="knob"><b>0</b><i>BAL</i></div>
+          </div>
+        </div>
+        <p class="page-note"><b>SETUP</b> holds the switch. VCNT turns DigiGlide on and sets how many voices the chord uses, three to six. The rest is the bass voice and its patterns, strum speed, bloom and restrike.</p>
+      </div>
+      <div class="stack">
+        <div class="page" role="img" aria-label="The TUNE page: TUNE PURE, FAN 20">
+          <div class="page-title"><span>TUNE</span><span>PURE</span></div>
+          <div class="knobs">
+            <div class="knob"><b>PURE</b><i>TUNE</i></div><div class="knob"><b>20</b><i>FAN</i></div><div class="knob"><b>&nbsp;</b><i>&nbsp;</i></div><div class="knob"><b>&nbsp;</b><i>&nbsp;</i></div>
+          </div>
+        </div>
+        <p class="page-note"><b>TUNE</b> has two settings. PURE tunes each chord note to an exact ratio above the root, for beatless thirds and fifths. FAN spreads the voices either side of pitch.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="more">
+  <div class="wrap stack-lg">
+    <h2>More in it</h2>
+    <div class="two">
+      <div class="card"><h3>Ways to strike a chord</h3><p>PLAY chooses all notes at once, a strum up, a strum down, or a harp run up through three octaves.</p>
+        <ul class="chips"><li>CHRD</li><li>STRM</li><li>STRU</li><li>HARP</li></ul></div>
+      <div class="card"><h3>Moves</h3><p>A gesture for how the voices travel into a chord. Good as a lock on a single step.</p>
+        <ul class="chips"><li>BLOM</li><li>CAS+</li><li>CAS-</li><li>SPRL</li><li>SWOP</li><li>SCAT</li><li>CONV</li><li>FALL</li><li>EVOL</li></ul></div>
+      <div class="card"><h3>Glide paths</h3><p>The curve each voice follows. SEMI and SCAL step through semitones or the notes of the scale.</p>
+        <ul class="chips"><li>SMTH</li><li>LIN</li><li>EASE</li><li>SWEL</li><li>BNCE</li><li>LATE</li><li>SNAP</li><li>WOBL</li><li>SEMI</li><li>SCAL</li></ul></div>
+      <div class="card"><h3>A bass voice with patterns</h3><p>The lowest voice can follow the chord or play alone, and hold its note or play a figure in time with the tempo.</p>
+        <ul class="chips"><li>HOLD</li><li>PULS</li><li>OCT</li><li>WALK</li><li>R-5</li><li>ARP</li><li>OFFB</li><li>332</li></ul></div>
+      <div class="card"><h3>DigiDrone sounds</h3><p>Ten FM TONE drone sounds are built in, stepped through and loaded with two shortcuts. Each note of the chord is its own small network of oscillators.</p>
+        <ul class="chips"><li>STILL AIR</li><li>SLOW CHAIN</li><li>DARK RING</li><li>IRON BELLS</li><li>BEAT FIELD</li><li>GLASS ORGAN</li><li>UNDERTOW</li><li>WIRE CHOIR</li><li>HOLLOW FIFTHS</li><li>STORM GLASS</li></ul></div>
+      <div class="card"><h3>With the stock arpeggiator</h3><p>Turn the Digitone's own ARP on and it plays the chord of the key you hold, one note at a time, with its usual speed, range and note length.</p>
+        <p>Two tracks can sound chords at once, for example a drone on one and glides on another.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="status">
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <h2>Where it stands</h2>
+      <p class="dim">DigiGlide is being built and played on one unit, the author's. This page describes image 34. Features and storage change between builds, and there is no installer and no download yet.</p>
+    </div>
+    <div class="two">
+      <div class="stack">
+        <h3>Known limits</h3>
+        <ul class="plain">
+          <li>Tested on one unit. Most checks run in an emulator, not on hardware.</li>
+          <li>A heavy pattern can still run out of time when two DigiGlide tracks play many voices, and other tracks then lose notes.</li>
+          <li>A pattern change carries the settings only to a track holding the same sound.</li>
+          <li>Kit copy, SAVE KIT and exports drop the settings.</li>
+          <li>A rare glitch noise after about two minutes of play has been reported and is not explained yet.</li>
+          <li>It does not work on MIDI tracks.</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <h3>The voice budget</h3>
+        <p class="dim">The Digitone II has 16 voices, and a DigiGlide track reserves its own. A budget that works: one glide track with 6 voices, one drone with 4, and 6 left for drums and bass.</p>
+        <h3>Testing the beta</h3>
+        <p class="dim">If you are trying a beta build, say what you did, what you expected and what you heard, with the image number from the status box, in an <a href="https://github.com/michaeltietjen/digiglide/issues">issue on GitHub</a> or by email to <a href="mailto:michael.tietjen@gmail.com">michael.tietjen@gmail.com</a>.</p>
+        <h3>When it is ready</h3>
+        <p class="dim">It will be free: the source, plus a way to build it from your own copy of the official OS file. No Elektron firmware will be shared.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="wrap stack-lg">
+    <h2>Before you install any modified firmware</h2>
+    <div class="notice stack">
+      <p><b>DigiGlide is unofficial.</b> It is not made, endorsed or supported by Elektron. Installing modified firmware is at your own risk: it can leave the unit unable to start, and it may affect your warranty.</p>
+      <p>Back up the +Drive, keep the official OS file at hand, and have a DIN MIDI interface ready, not only USB. If the unit starts but misbehaves, send the official OS file with Elektron Transfer over USB. If it does not start, hold [FUNC] while powering on, press [TRIG 4], and send the official OS file to the MIDI IN socket. That takes about 12 to 15 minutes.</p>
+    </div>
+    <p class="dim">The repository holds no Elektron firmware, nothing extracted from it and no file generated from it. A DigiGlide image is built on your own computer from your own copy of the official OS 1.12 file.</p>
+  </div>
+</section>
+
+<section id="credits">
+  <div class="wrap stack-lg">
+    <h2>Where it comes from</h2>
+    <p class="dim">DigiGlide is a port of <a href="https://michaeltietjen.github.io/brickchord/brickglide/">Brickglide</a>, an ambient chord machine for handhelds, and it stands on other people's work on the Digitone II:</p>
+    <ul class="plain">
+      <li><b>dnfw</b> by angellinares: the firmware container, loader, parameter table relocation, safety check and USB probe.</li>
+      <li><b>digihealth</b> and <b>digiemu</b> by irpina: the origin of the probe, and the emulator.</li>
+      <li><b>digikit</b> by m-dwyer: the emulator tooling the tests run in.</li>
+      <li><b>digitone-2-modding-skill</b> by complex-ping: build helpers and the emulator harness.</li>
+      <li><b>dn2-cfw (Digiwerk)</b> by naturarum: notes on the kit record and the parameter table.</li>
+    </ul>
+    <p class="dim">Licensed AGPL-3.0-or-later. The <a href="https://github.com/michaeltietjen/digiglide">source, the design and the build log</a> are on GitHub.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>DigiGlide is unofficial and not affiliated with Elektron. Elektron and Digitone are trademarks of Elektron Music Machines.</span>
+    <span>Made by <a href="https://github.com/michaeltietjen">Michael Tietjen</a>. Found a problem in the beta? <a href="https://github.com/michaeltietjen/digiglide/issues">Report it on GitHub</a>, or write to <a href="mailto:michael.tietjen@gmail.com">michael.tietjen@gmail.com</a>.</span>
+    <span><a href="manual.html">Manual</a> · <a href="https://github.com/michaeltietjen/digiglide">GitHub</a> · <a href="https://michaeltietjen.github.io/brickchord/">Brickchord</a></span>
+  </div>
+</footer>
+
+<script>
+// The hero: five voices as lines on a 128 x 64 one-bit screen, gliding from chord to chord.
+(function () {
+  var c = document.getElementById('glide');
+  if (!c || !c.getContext) return;
+  var g = c.getContext('2d');
+  var CHORDS = [[52, 43, 34, 27, 20], [54, 41, 33, 27, 18], [56, 44, 36, 28, 22], [53, 46, 35, 29, 24]];   // rows, low voice first
+  var HOLD = 150, GLIDE = 110, W = 128, H = 64;
+  var hist = [], t = 0, cur = 0;
+  function pos(v) {
+    var seg = t % (HOLD + GLIDE), k = Math.floor(t / (HOLD + GLIDE)) % CHORDS.length;
+    var a = CHORDS[k][v], b = CHORDS[(k + 1) % CHORDS.length][v];
+    if (seg < HOLD) return a;
+    var p = (seg - HOLD) / GLIDE, lag = v * 0.06;                 // upper voices arrive a little later
+    p = Math.min(1, Math.max(0, (p - lag) / (1 - 0.3)));
+    return Math.round(a + (b - a) * (p * p * (3 - 2 * p)));
+  }
+  function step() {
+    var col = [];
+    for (var v = 0; v < 5; v++) col.push(pos(v));
+    hist.push(col);
+    if (hist.length > W) hist.shift();
+    t++;
+  }
+  function draw() {
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#f2f0ea';
+    for (var x = 0; x < hist.length; x++)
+      for (var v = 0; v < 5; v++) g.fillRect(W - hist.length + x, hist[x][v], 1, 2);
+    for (var gx = 3; gx < W; gx += 8) g.fillRect(gx, 60, 1, 1);  // a ground line of dots
+  }
+  for (var i = 0; i < W; i++) step();
+  draw();
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var last = 0;
+  function frame(now) {
+    if (now - last > 33) { step(); draw(); last = now; }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
