@@ -1352,3 +1352,9 @@ Scratch builds only so far, with a built-in placeholder frame; the owner supplie
 ### Image 34: the clean run finished (2026-11-21)
 
 All 22 tests OK on the final image 34 (sha256 848625fb...), one run, nothing else writing its outputs.
+
+### Image 35 on the unit (2026-11-21)
+
+The owner flashed it: "the splash works". So the panel layout is right on hardware and the start goes on to the
+main screen. Not reported yet: the STARTUP menu with FUNC held, and the "DIGIGLIDE KEPT" carry-over of image 34.
+MANUAL.md now describes image 35; README says four pages.

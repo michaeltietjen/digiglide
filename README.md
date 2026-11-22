@@ -6,7 +6,7 @@ extension, key, voicing), and the way the voices travel is set per track: glide 
 (Bloom, Cascade, Spiral and others), drift, vibrato and scrubbing. It is a port of Brickglide, from
 [brickchord](https://github.com/michaeltietjen/brickchord), and it is meant for pads and slow harmonic movement.
 
-It works on FM TONE, WAVETONE, FM DRUM and SWARMER tracks, as three extra pages after the machine's own SYN pages.
+It works on FM TONE, WAVETONE, FM DRUM and SWARMER tracks, as four extra pages after the machine's own SYN pages.
 
 **How to use it: [MANUAL.md](MANUAL.md).**
 

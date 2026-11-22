@@ -1,7 +1,12 @@
 # DigiGlide: how to use it
 
-This describes image 34 on OS 1.12. DigiGlide is in development; what is known not to work yet is at the end.
+This describes image 35 on OS 1.12. DigiGlide is in development; what is known not to work yet is at the end.
 Design details are in [GLIDE_SPEC.md](GLIDE_SPEC.md), the history in [notes/build_log.md](notes/build_log.md).
+
+## Starting up
+
+After Elektron's own intro the unit shows the DigiGlide splash for about two seconds, with the build number
+("BETA 35"), and then starts as usual. The STARTUP menu ([FUNC] held at power-on) is unchanged.
 
 ## The idea
 
