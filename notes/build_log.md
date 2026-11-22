@@ -1358,3 +1358,20 @@ All 22 tests OK on the final image 34 (sha256 848625fb...), one run, nothing els
 The owner flashed it: "the splash works". So the panel layout is right on hardware and the start goes on to the
 main screen. Not reported yet: the STARTUP menu with FUNC held, and the "DIGIGLIDE KEPT" carry-over of image 34.
 MANUAL.md now describes image 35; README says four pages.
+
+## The patcher: image 35 for testers who cannot build (2026-11-21)
+
+- install/digiglide_patch.py: stock OS 1.12 file in (SHA-256 checked), DN2_1.12_DIGIGLIDE_35.syx out, written only
+  when its SHA-256 is the built image's. Python 3.10 or newer, standard library only. About a minute (dnfw's aPLib
+  packer in plain Python at the build's chain depth, 192: 53 s on Python 3.12, 64 s on 3.14).
+- install/DigiGlide_35.dgpatch (41,759 bytes), made by install/make_patch.py from the build's section_3.bin: copy
+  steps (offset, length in the stock section) and data steps. Stock part: 135 changed places, 494 bytes. Appended
+  part (the area: 101,020 bytes): 24,139 bytes are copy steps, among them the whole relocated parameter table
+  (19,260 bytes of Elektron's records, which must not be shipped). 77,375 bytes carried in all; the maker stops if
+  a carried stretch of 16 bytes also occurs in stock.
+- install/vendor/dnfw: 25 dnfw files unchanged (commit 1a9f452); vendor/dnfw_csrc: the loader's source as built
+  for 1.12, because the patch carries the loader compiled.
+- Proof: the patcher's output `cmp`s equal to build/DN2_1.12_DIGIGLIDE_35.syx (2,435,744 bytes, sha256
+  c6c8472f...); preflight PASS on it (13 lines ok); run again from a copy of install/ alone with `python -I` on
+  3.12: same hash. Refuses: a random file, the DigiGlide image itself, Python 3.9.
+- Not tried: Windows, Linux, and a tester's own download of the stock file (the hash check covers that one).

@@ -6,9 +6,39 @@ Public License as published by the Free Software Foundation, either version 3 of
 any later version. It is distributed WITHOUT ANY WARRANTY; see LICENSE.
 
 DigiGlide is unofficial. It is not made, endorsed or supported by Elektron Music Machines. "Elektron" and
-"Digitone" are trademarks of their owner. This repository contains no Elektron firmware, no part extracted from
-it and no file generated from it: a firmware image is built on your own computer from your own copy of the
-official OS file.
+"Digitone" are trademarks of their owner. This repository contains no Elektron firmware and no part extracted from
+it: a firmware image is made on your own computer from your own copy of the official OS file, by the build
+(mod/build_dg.py) or by the patcher (install/digiglide_patch.py).
+
+The patch file
+--------------
+
+install/DigiGlide_35.dgpatch
+    How to make image 35's MAIN OS section from the stock one: steps that copy a stretch of the user's own stock
+    section (an offset and a length, never the bytes) and steps that carry bytes. The carried bytes are: DigiGlide's
+    compiled code and data (source: mod/, AGPL-3.0-or-later), dnfw's runtime loader in compiled form (source:
+    install/vendor/dnfw_csrc/, AGPL-3.0-or-later), and 494 bytes at the 135 places the build changes in stock
+    (calls into DigiGlide, the relocated parameter table's addresses, its 55 raised bounds, the loader). The copy of
+    Elektron's parameter table that a built image holds is a copy step. install/make_patch.py makes the file and
+    stops if any carried stretch of 16 bytes or more also occurs in the stock section. The file also holds SHA-256
+    hashes of the stock file, of its MAIN OS section and of the result.
+    The compiled code includes the USB probe (mod/probe.S, see below; its digihealth part is GPL-2.0-or-later, used
+    under GPL-3.0, which section 13 of the AGPL allows to be combined) and the port of Brickglide (MIT).
+
+Included from other projects
+----------------------------
+
+install/vendor/dnfw/
+    25 files copied unchanged from dnfw (angellinares/dn2_firmware_explore, commit 1a9f452), AGPL-3.0-or-later, the
+    same licence text as LICENSE: the SysEx transport, the container, the aPLib codec and the integrity code the
+    patcher needs to read the stock file and write the image. dnfw ported these from elektron-firmware-tool
+    (mischa85, Marcel Bierling), MIT; that notice and the MIT text are in install/vendor/DNFW-THIRD-PARTY.md, dnfw's
+    own THIRD-PARTY.md, copied whole.
+
+install/vendor/dnfw_csrc/
+    The source of the runtime loader every image contains: dnfw's csrc/runtime/loader.S, unchanged, and
+    csrc/include/dn2_111.h with the one address the OS 1.12 build changes (DNFW_AREA, see mod/port_os.py).
+    AGPL-3.0-or-later.
 
 Files derived from other projects
 ---------------------------------
@@ -33,12 +63,12 @@ model/digiglide.py, mod/core/dg_core.c
     The glide planner, voice leading, paths, Moves and tables are a port of Brickglide, part of
     michaeltietjen/brickchord (brickchord/ambient.py, engine.py, main.py), MIT, by the same author.
 
-Used at build or test time, not included
+Used at build or test time, not included (the patcher needs none of these)
 ----------------------------------------
 
 dnfw (angellinares/dn2_firmware_explore), AGPL-3.0-or-later
-    Firmware container and signing, the runtime loader (csrc/runtime/loader.S, built into every image), the code
-    area, the parameter table relocation (dnfw.patch.paramtable), verification. A built DigiGlide image therefore
+    For the build: the code area, the C build, the parameter table relocation (dnfw.patch.paramtable),
+    verification. (Its container code and its loader's source are included, see above.) A built DigiGlide image
     contains dnfw code, which is why DigiGlide is AGPL-3.0-or-later.
 
 digitone-2-modding-skill (complex-ping), MIT
