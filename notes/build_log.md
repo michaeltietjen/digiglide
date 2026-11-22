@@ -1375,3 +1375,11 @@ MANUAL.md now describes image 35; README says four pages.
   c6c8472f...); preflight PASS on it (13 lines ok); run again from a copy of install/ alone with `python -I` on
   3.12: same hash. Refuses: a random file, the DigiGlide image itself, Python 3.9.
 - Not tried: Windows, Linux, and a tester's own download of the stock file (the hash check covers that one).
+
+## Public beta (2026-11-22)
+
+The owner's decision: the repository is public, GitHub Pages serves docs/ (https://michaeltietjen.github.io/digiglide/),
+release beta-35 (a prerelease, no firmware attached) points at main. The site says beta and links the install
+steps. The patcher run from the public release zip gives the tested image's hash. History audit before: no .syx,
+no section files, no secrets; author emails left as they are (the owner's choice). Still not reported from the
+unit: the STARTUP menu with FUNC held, the DIGIGLIDE KEPT carry-over.
