@@ -63,6 +63,12 @@ python3 assets/make_video.py
 
 That rewrites the four files. It needs Pillow and ffmpeg.
 
+## Thumbnails
+
+`thumbnail/` holds the finished logo as stills: `digiglide-logo-transparent-white.png` and `-black.png` to lay over a
+photo, and three finished 1280 x 720 thumbnails (logo alone, with "CHORDS THAT GLIDE", with "FOR DIGITONE II").
+`python3 assets/make_thumbnail.py` rewrites them; it needs Pillow.
+
 ## Regenerating
 
 ```bash
